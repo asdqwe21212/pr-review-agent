@@ -1,0 +1,38 @@
+# Environment
+.env
+config/.env
+
+# Logs
+logs/
+*.log
+
+# Job store data
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.tmp
+*.bak

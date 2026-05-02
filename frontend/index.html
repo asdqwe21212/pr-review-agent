@@ -5,26 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PR Review Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0c0f;
-    --surface: #111418;
-    --surface2: #181c22;
-    --border: #1e242c;
-    --border2: #252c37;
-    --text: #c8d6e8;
-    --text-dim: #5a6a7e;
-    --text-muted: #3a4a5e;
-    --accent: #00d4ff;
-    --accent2: #0099bb;
-    --green: #00e87a;
-    --red: #ff4560;
-    --orange: #ff9f40;
-    --yellow: #ffd166;
-    --purple: #b388ff;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface2: #f1f5f9;
+    --border: #e2e8f0;
+    --border2: #cbd5e1;
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --text-muted: #94a3b8;
+    --accent: #2563eb;
+    --accent-light: #3b82f6;
+    --accent-bg: #eff6ff;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --orange: #ea580c;
+    --orange-bg: #fff7ed;
+    --yellow: #ca8a04;
+    --yellow-bg: #fefce8;
+    --purple: #7c3aed;
+    --mono: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,35 +41,23 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 14px;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: 
-      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
 
   /* Header */
   header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 32px;
+    padding: 14px 32px;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
-    background: rgba(10, 12, 15, 0.95);
-    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-sm);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -70,64 +66,55 @@
   .logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
 
   .logo-icon {
-    width: 32px;
-    height: 32px;
-    border: 1.5px solid var(--accent);
-    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent);
-    font-size: 14px;
-    box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
-    animation: pulse-border 3s ease-in-out infinite;
-  }
-
-  @keyframes pulse-border {
-    0%, 100% { box-shadow: 0 0 12px rgba(0, 212, 255, 0.2); }
-    50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
   }
 
   .logo-text {
     font-family: var(--sans);
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
   }
 
-  .logo-text span { color: var(--accent); }
+  .logo-text span { color: var(--accent); font-weight: 800; }
 
   .header-status {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
+    gap: 8px;
+    font-size: 12px;
     color: var(--text-dim);
+    background: var(--green-bg);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #bbf7d0;
   }
 
   .status-dot {
-    width: 6px; height: 6px;
+    width: 7px; height: 7px;
     border-radius: 50%;
     background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: blink 2s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
   }
 
   /* Main layout */
   main {
     flex: 1;
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: 340px 1fr;
     grid-template-rows: auto 1fr;
     gap: 0;
   }
@@ -136,44 +123,69 @@
   .stats-bar {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
   }
 
   .stat-item {
-    padding: 20px 28px;
+    padding: 18px 24px;
     border-right: 1px solid var(--border);
-    transition: background 0.2s;
+    transition: background 0.15s;
   }
   .stat-item:last-child { border-right: none; }
-  .stat-item:hover { background: var(--surface); }
+  .stat-item:hover { background: var(--surface2); }
 
   .stat-label {
     font-size: 10px;
     color: var(--text-dim);
-    letter-spacing: 1.5px;
+    font-weight: 600;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .stat-value {
     font-family: var(--sans);
-    font-size: 26px;
-    font-weight: 800;
-    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    letter-spacing: -0.5px;
   }
 
   .stat-value.accent { color: var(--accent); }
   .stat-value.green { color: var(--green); }
   .stat-value.orange { color: var(--orange); }
 
-  .stat-sub { font-size: 10px; color: var(--text-muted); }
+  .stat-sub { font-size: 11px; color: var(--text-muted); }
+
+  .budget-bar-container {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .budget-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease, background 0.5s ease;
+    background: var(--green);
+    width: 0%;
+  }
+
+  .budget-bar.warning { background: var(--yellow); }
+  .budget-bar.critical { background: var(--red); }
 
   /* Sidebar */
   .sidebar {
     border-right: 1px solid var(--border);
+    background: var(--surface);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -187,39 +199,41 @@
 
   .panel-title {
     font-size: 10px;
-    letter-spacing: 2px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--text-dim);
-    margin-bottom: 16px;
+    margin-bottom: 18px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .panel-title::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--border2);
+    background: var(--border);
   }
 
-  .form-group { margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
 
   .form-label {
     display: block;
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-dim);
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     margin-bottom: 6px;
   }
 
   .form-input {
     width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 6px;
-    padding: 10px 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
     color: var(--text);
     font-family: var(--mono);
     font-size: 13px;
@@ -229,7 +243,7 @@
 
   .form-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 
   .form-input::placeholder { color: var(--text-muted); }
@@ -241,33 +255,43 @@
     cursor: pointer;
     color: var(--text-dim);
     font-size: 12px;
+    font-weight: 500;
   }
 
-  .checkbox-row input[type=checkbox] { accent-color: var(--accent); }
+  .checkbox-row input[type=checkbox] {
+    accent-color: var(--accent);
+    width: 15px; height: 15px;
+  }
 
   .btn-primary {
     width: 100%;
-    padding: 12px;
+    padding: 11px;
     background: var(--accent);
-    color: #000;
+    color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-family: var(--mono);
     font-weight: 600;
     font-size: 13px;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     cursor: pointer;
     transition: all 0.2s;
-    margin-top: 4px;
+    margin-top: 6px;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
   }
 
-  .btn-primary:hover { background: #33ddff; transform: translateY(-1px); }
+  .btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
+  }
   .btn-primary:active { transform: translateY(0); }
   .btn-primary:disabled {
     background: var(--border2);
     color: var(--text-muted);
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 
   /* Job List */
@@ -284,31 +308,40 @@
   .jobs-header {
     padding: 16px 24px 12px;
     font-size: 10px;
-    letter-spacing: 2px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--text-dim);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     position: sticky;
     top: 0;
-    background: var(--bg);
+    background: var(--surface);
     z-index: 10;
+  }
+
+  .jobs-header .status-dot {
+    margin-left: auto;
+    width: 6px; height: 6px;
   }
 
   .job-item {
     padding: 14px 24px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.12s;
     display: flex;
     align-items: center;
     gap: 12px;
   }
 
-  .job-item:hover { background: var(--surface); }
-  .job-item.active { background: var(--surface2); border-left: 2px solid var(--accent); }
+  .job-item:hover { background: var(--accent-bg); }
+  .job-item.active {
+    background: var(--accent-bg);
+    border-left: 3px solid var(--accent);
+  }
 
   .job-status-dot {
     width: 8px; height: 8px;
@@ -316,14 +349,20 @@
     flex-shrink: 0;
   }
   .job-status-dot.pending { background: var(--text-muted); }
-  .job-status-dot.running { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: blink 1s infinite; }
+  .job-status-dot.running { background: var(--accent); animation: pulse-dot 1s ease-in-out infinite; }
   .job-status-dot.done { background: var(--green); }
   .job-status-dot.error { background: var(--red); }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
 
   .job-info { flex: 1; min-width: 0; }
 
   .job-repo {
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text);
     white-space: nowrap;
     overflow: hidden;
@@ -331,18 +370,18 @@
     margin-bottom: 2px;
   }
 
-  .job-meta { font-size: 10px; color: var(--text-dim); }
+  .job-meta { font-size: 11px; color: var(--text-dim); }
 
   .job-score {
     font-family: var(--sans);
     font-weight: 700;
-    font-size: 15px;
+    font-size: 16px;
   }
 
   /* Content panel */
   .content {
     overflow-y: auto;
-    background: var(--surface);
+    background: var(--bg);
   }
 
   .content::-webkit-scrollbar { width: 4px; }
@@ -355,47 +394,67 @@
     align-items: center;
     justify-content: center;
     color: var(--text-muted);
-    gap: 16px;
+    gap: 14px;
   }
 
-  .empty-icon { font-size: 48px; opacity: 0.3; }
-  .empty-text { font-size: 12px; letter-spacing: 1px; }
+  .empty-icon {
+    width: 64px; height: 64px;
+    background: var(--accent-bg);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--accent);
+  }
+
+  .empty-text { font-size: 13px; color: var(--text-dim); font-weight: 500; }
 
   /* Review Detail */
-  .review-detail { padding: 32px; }
+  .review-detail { padding: 32px; max-width: 900px; }
 
   .review-header {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     padding-bottom: 24px;
     border-bottom: 1px solid var(--border);
   }
 
   .review-pr-number {
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--accent);
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     margin-bottom: 8px;
+    background: var(--accent-bg);
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 5px;
   }
 
   .review-title {
     font-family: var(--sans);
     font-size: 20px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 12px;
-    line-height: 1.3;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.35;
+    letter-spacing: -0.3px;
   }
 
   .review-meta-row {
     display: flex;
-    gap: 20px;
+    gap: 18px;
     flex-wrap: wrap;
   }
 
-  .review-meta-item { font-size: 11px; color: var(--text-dim); }
-  .review-meta-item span { color: var(--text); }
+  .review-meta-item {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+  .review-meta-item span { color: var(--text); font-weight: 600; }
 
-  /* Score circle */
+  /* Score section */
   .score-section {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -403,13 +462,14 @@
     align-items: center;
     margin-bottom: 28px;
     padding: 24px;
-    background: var(--bg);
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
   }
 
   .score-circle {
-    width: 88px; height: 88px;
+    width: 90px; height: 90px;
     position: relative;
   }
 
@@ -419,7 +479,7 @@
     height: 100%;
   }
 
-  .score-circle-bg { fill: none; stroke: var(--border2); stroke-width: 6; }
+  .score-circle-bg { fill: none; stroke: var(--border); stroke-width: 6; }
   .score-circle-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
 
   .score-number {
@@ -431,130 +491,162 @@
     font-family: var(--sans);
     font-size: 22px;
     font-weight: 800;
-    color: #fff;
+    color: var(--text);
   }
 
-  .score-info {}
-  .score-summary { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 12px; }
+  .score-summary { font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px; }
 
   .verdict-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
-  .verdict-badge.approve { background: rgba(0, 232, 122, 0.15); color: var(--green); border: 1px solid rgba(0, 232, 122, 0.3); }
-  .verdict-badge.changes { background: rgba(255, 69, 96, 0.15); color: var(--red); border: 1px solid rgba(255, 69, 96, 0.3); }
+  .verdict-badge.approve {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid #bbf7d0;
+  }
+  .verdict-badge.changes {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid #fecaca;
+  }
 
   /* Issue sections */
   .issues-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 14px;
+    margin-bottom: 14px;
   }
 
   .issue-section {
-    background: var(--bg);
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
   }
 
   .issue-section-full { grid-column: 1 / -1; }
 
   .issue-section-header {
-    padding: 12px 16px;
+    padding: 12px 18px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-size: 11px;
-    letter-spacing: 1px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    color: var(--text-dim);
+    background: var(--surface2);
   }
 
   .issue-section-header .icon-label { display: flex; align-items: center; gap: 8px; }
   .issue-count {
-    background: var(--border2);
+    background: var(--border);
     border-radius: 10px;
-    padding: 2px 8px;
+    padding: 3px 10px;
     font-size: 10px;
+    font-weight: 700;
     color: var(--text-dim);
   }
 
-  .issue-list { padding: 8px 0; }
+  .issue-list { padding: 4px 0; }
 
   .issue-item {
-    padding: 12px 16px;
+    padding: 14px 18px;
     border-bottom: 1px solid var(--border);
-    animation: fadeIn 0.3s ease;
   }
   .issue-item:last-child { border-bottom: none; }
 
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
   .issue-location {
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--accent);
-    background: rgba(0, 212, 255, 0.08);
+    background: var(--accent-bg);
     border-radius: 4px;
-    padding: 2px 6px;
+    padding: 3px 8px;
     display: inline-block;
     margin-bottom: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
   }
 
-  .issue-desc { font-size: 12px; color: var(--text); margin-bottom: 6px; line-height: 1.5; }
+  .issue-desc {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
 
   .issue-suggestion {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-dim);
     background: var(--surface2);
-    border-left: 2px solid var(--border2);
-    padding: 6px 10px;
-    border-radius: 0 4px 4px 0;
+    border-left: 3px solid var(--accent-light);
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
     line-height: 1.5;
   }
 
   .no-issues {
-    padding: 20px;
+    padding: 24px;
     text-align: center;
     color: var(--text-muted);
     font-size: 11px;
+    font-weight: 500;
   }
 
   /* Positives */
   .positive-item {
-    padding: 10px 16px;
+    padding: 10px 18px;
     border-bottom: 1px solid var(--border);
     font-size: 12px;
     color: var(--text);
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
+    line-height: 1.5;
   }
   .positive-item:last-child { border-bottom: none; }
-  .positive-item::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .positive-item::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 700;
+    flex-shrink: 0;
+    background: var(--green-bg);
+    width: 20px; height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 11px;
+  }
 
   /* Token usage */
   .token-bar {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 24px;
-    background: var(--bg);
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
-    margin-top: 16px;
+    margin-top: 14px;
     font-size: 11px;
     color: var(--text-dim);
+    font-weight: 500;
   }
 
-  .token-bar span { color: var(--accent); font-weight: 600; }
+  .token-bar span { color: var(--accent); font-weight: 700; }
 
   /* Loading state */
   .loading-state {
@@ -562,33 +654,38 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px;
-    gap: 20px;
+    padding: 80px 40px;
+    gap: 16px;
   }
 
   .spinner {
-    width: 36px; height: 36px;
-    border: 2px solid var(--border2);
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.7s linear infinite;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .loading-text { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+  .loading-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
 
   .turn-indicator {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--accent);
-    margin-top: 4px;
+    font-weight: 500;
   }
 
   /* Severity colors */
-  .sev-critical { color: var(--red); }
-  .sev-high { color: var(--orange); }
-  .sev-medium { color: var(--yellow); }
-  .sev-low { color: var(--green); }
+  .sev-critical { color: var(--red); font-weight: 700; }
+  .sev-high { color: var(--orange); font-weight: 700; }
+  .sev-medium { color: var(--yellow); font-weight: 700; }
+  .sev-low { color: var(--green); font-weight: 700; }
   .sev-bugs { color: var(--red); }
   .sev-security { color: var(--orange); }
   .sev-performance { color: var(--yellow); }
@@ -600,6 +697,8 @@
     .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 50vh; }
     .issues-grid { grid-template-columns: 1fr; }
     .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    header { padding: 12px 20px; }
+    .review-detail { padding: 20px; }
   }
 </style>
 </head>
@@ -607,12 +706,12 @@
 <div class="app">
   <header>
     <div class="logo">
-      <div class="logo-icon">⌥</div>
-      <div class="logo-text">PR<span>Review</span>Agent</div>
+      <div class="logo-icon">⌘</div>
+      <div class="logo-text">PR<span>Review</span></div>
     </div>
     <div class="header-status">
       <div class="status-dot"></div>
-      <span id="agent-status">Claude API · Online</span>
+      <span id="agent-status">Claude API · Connected</span>
     </div>
   </header>
 
@@ -636,13 +735,21 @@
       </div>
       <div class="stat-item">
         <div class="stat-label">Avg Score</div>
-        <div class="stat-value orange" id="stat-score">—</div>
+        <div class="stat-value orange" id="stat-score">&mdash;</div>
         <div class="stat-sub">out of 100</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Tokens Used</div>
         <div class="stat-value" id="stat-tokens">0</div>
         <div class="stat-sub">total</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Weekly Budget</div>
+        <div class="stat-value" id="stat-budget">0</div>
+        <div class="budget-bar-container">
+          <div class="budget-bar" id="budget-bar"></div>
+        </div>
+        <div class="stat-sub" id="stat-budget-sub">this week</div>
       </div>
     </div>
 
@@ -666,7 +773,7 @@
           </label>
         </div>
         <button class="btn-primary" id="btn-review" onclick="submitReview()">
-          ▶ Start Review
+          Start Review
         </button>
       </div>
 
@@ -677,7 +784,7 @@
           <div class="status-dot" style="margin-left: auto;"></div>
         </div>
         <div id="job-list">
-          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 11px;">
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 500;">
             No reviews yet
           </div>
         </div>
@@ -687,7 +794,7 @@
     <!-- Content Panel -->
     <div class="content" id="content">
       <div class="empty-state">
-        <div class="empty-icon">⌥</div>
+        <div class="empty-icon">⌘</div>
         <div class="empty-text">Select a job or submit a new PR review</div>
       </div>
     </div>
@@ -695,12 +802,11 @@
 </div>
 
 <script>
-const API = '';  // Same origin; change to http://localhost:8000 for local dev
+const API = '';
 let selectedJob = null;
 let pollInterval = null;
 let statsInterval = null;
 
-// ─── API ───────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const r = await fetch(API + path, {
     headers: { 'Content-Type': 'application/json' },
@@ -713,7 +819,6 @@ async function api(path, opts = {}) {
   return r.json();
 }
 
-// ─── Submit ────────────────────────────────────────────────────────────
 async function submitReview() {
   const repo = document.getElementById('input-repo').value.trim();
   const pr = parseInt(document.getElementById('input-pr').value);
@@ -724,7 +829,7 @@ async function submitReview() {
 
   const btn = document.getElementById('btn-review');
   btn.disabled = true;
-  btn.textContent = '⏳ Submitting...';
+  btn.textContent = 'Submitting...';
 
   try {
     const job = await api('/api/review', {
@@ -739,17 +844,16 @@ async function submitReview() {
     alert('Error: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = '▶ Start Review';
+    btn.textContent = 'Start Review';
   }
 }
 
-// ─── Jobs ──────────────────────────────────────────────────────────────
 async function refreshJobs() {
   const jobs = await api('/api/jobs');
   const container = document.getElementById('job-list');
 
   if (!jobs.length) {
-    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px;">No reviews yet</div>';
+    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12px;font-weight:500;">No reviews yet</div>';
     return;
   }
 
@@ -762,14 +866,13 @@ async function refreshJobs() {
       <div class="job-item ${j.job_id === selectedJob ? 'active' : ''}" onclick="selectJob('${j.job_id}')">
         <div class="job-status-dot ${j.status}"></div>
         <div class="job-info">
-          <div class="job-repo">${repoShort} <span style="color:var(--text-dim)">#${j.pr_number}</span></div>
-          <div class="job-meta">${j.status.toUpperCase()} · ${time}</div>
+          <div class="job-repo">${repoShort} <span style="color:var(--text-dim);font-weight:400;">#${j.pr_number}</span></div>
+          <div class="job-meta">${j.status.toUpperCase()} &middot; ${time}</div>
         </div>
         ${score !== undefined ? `<div class="job-score" style="color:${scoreColor}">${score}</div>` : ''}
       </div>`;
   }).join('');
 
-  // Auto-refresh running jobs
   const hasRunning = jobs.some(j => j.status === 'pending' || j.status === 'running');
   if (hasRunning && !pollInterval) {
     pollInterval = setInterval(async () => {
@@ -786,11 +889,10 @@ async function refreshJobs() {
 
 async function selectJob(jobId) {
   selectedJob = jobId;
-  await refreshJobs(); // update active state
+  await refreshJobs();
   await renderJobDetail(jobId);
 }
 
-// ─── Stats ─────────────────────────────────────────────────────────────
 async function refreshStats() {
   try {
     const s = await api('/api/stats');
@@ -800,6 +902,22 @@ async function refreshStats() {
     document.getElementById('stat-score').textContent = s.avg_score || '—';
     document.getElementById('stat-tokens').textContent = formatTokens(s.total_tokens);
   } catch(e) {}
+
+  try {
+    const m = await api('/api/metrics/tokens');
+    const w = m.weekly;
+    document.getElementById('stat-budget').textContent = formatTokens(w.used);
+    document.getElementById('stat-budget-sub').textContent =
+      'of ' + formatTokens(w.budget) + ' this week';
+
+    const bar = document.getElementById('budget-bar');
+    if (bar) {
+      bar.style.width = Math.min(w.used_pct, 100) + '%';
+      bar.classList.remove('warning', 'critical');
+      if (w.alert_level === 'critical') bar.classList.add('critical');
+      else if (w.alert_level === 'warning') bar.classList.add('warning');
+    }
+  } catch(e) {}
 }
 
 function formatTokens(n) {
@@ -808,7 +926,6 @@ function formatTokens(n) {
   return n || '0';
 }
 
-// ─── Detail View ───────────────────────────────────────────────────────
 async function renderJobDetail(jobId) {
   const job = await api(`/api/jobs/${jobId}`);
   const content = document.getElementById('content');
@@ -834,8 +951,8 @@ async function renderJobDetail(jobId) {
   if (job.status === 'error') {
     content.innerHTML = `
       <div class="review-detail">
-        <div style="color:var(--red);padding:24px;background:rgba(255,69,96,0.1);border:1px solid rgba(255,69,96,0.3);border-radius:8px;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Review Failed</div>
+        <div style="color:var(--red);padding:24px;background:var(--red-bg);border:1px solid #fecaca;border-radius:10px;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:8px;">Review Failed</div>
           <div style="font-size:12px;color:var(--text-dim)">${job.error}</div>
         </div>
       </div>`;
@@ -852,7 +969,7 @@ async function renderJobDetail(jobId) {
   content.innerHTML = `
     <div class="review-detail">
       <div class="review-header">
-        <div class="review-pr-number">${r.repo} · PR #${r.pr_number}</div>
+        <div class="review-pr-number">${r.repo} &middot; PR #${r.pr_number}</div>
         <div class="review-title">${r.title}</div>
         <div class="review-meta-row">
           <div class="review-meta-item">Severity: <span class="sev-${rev.severity}">${(rev.severity || '').toUpperCase()}</span></div>
@@ -877,27 +994,27 @@ async function renderJobDetail(jobId) {
         <div class="score-info">
           <div class="score-summary">${rev.summary || ''}</div>
           <div class="verdict-badge ${rev.approve ? 'approve' : 'changes'}">
-            ${rev.approve ? '✓ APPROVED' : '↻ CHANGES REQUESTED'}
+            ${rev.approve ? 'Approved' : 'Changes Requested'}
           </div>
         </div>
       </div>
 
       <div class="issues-grid">
-        ${issueSection('Bugs', '🐛', 'sev-bugs', rev.bugs)}
-        ${issueSection('Security', '🔒', 'sev-security', rev.security)}
-        ${issueSection('Performance', '⚡', 'sev-performance', rev.performance)}
-        ${issueSection('Code Quality', '📝', 'sev-quality', rev.quality)}
+        ${issueSection('Bugs', '', 'sev-bugs', rev.bugs)}
+        ${issueSection('Security', '', 'sev-security', rev.security)}
+        ${issueSection('Performance', '', 'sev-performance', rev.performance)}
+        ${issueSection('Code Quality', '', 'sev-quality', rev.quality)}
         ${positivesSection(rev.positives)}
       </div>
 
       <div class="token-bar">
-        <span>⟨/⟩</span>
-        Input tokens: <span>${(r.token_usage?.input || 0).toLocaleString()}</span>
-        &nbsp;·&nbsp;
-        Output tokens: <span>${(r.token_usage?.output || 0).toLocaleString()}</span>
-        &nbsp;·&nbsp;
+        <span>Tokens</span>
+        Input: <span>${(r.token_usage?.input || 0).toLocaleString()}</span>
+        &middot;
+        Output: <span>${(r.token_usage?.output || 0).toLocaleString()}</span>
+        &middot;
         Total: <span>${((r.token_usage?.input || 0) + (r.token_usage?.output || 0)).toLocaleString()}</span>
-        &nbsp;·&nbsp;
+        &middot;
         Turns: <span>${rev.turns || 3}</span>
       </div>
     </div>`;
@@ -908,20 +1025,23 @@ function issueSection(title, icon, colorClass, items) {
     <div class="issue-item">
       ${item.line ? `<div class="issue-location">${item.line}</div>` : ''}
       <div class="issue-desc">${item.description || ''}</div>
-      ${item.suggestion ? `<div class="issue-suggestion">💡 ${item.suggestion}</div>` : ''}
+      ${item.suggestion ? `<div class="issue-suggestion">${item.suggestion}</div>` : ''}
     </div>`).join('');
+
+  const labels = { 'Bugs': 'Bug', 'Security': 'Vuln', 'Performance': 'Perf', 'Code Quality': 'Style' };
+  const tag = labels[title] || title;
 
   return `
     <div class="issue-section">
       <div class="issue-section-header">
         <div class="icon-label">
-          <span class="${colorClass}">${icon}</span>
+          <span class="${colorClass}">${tag}</span>
           <span>${title}</span>
         </div>
         <div class="issue-count">${(items || []).length}</div>
       </div>
       <div class="issue-list">
-        ${rows || '<div class="no-issues">None found ✓</div>'}
+        ${rows || '<div class="no-issues">None found</div>'}
       </div>
     </div>`;
 }
@@ -932,14 +1052,13 @@ function positivesSection(items) {
   return `
     <div class="issue-section issue-section-full">
       <div class="issue-section-header">
-        <div class="icon-label"><span style="color:var(--green)">✅</span><span>Positives</span></div>
+        <div class="icon-label"><span style="color:var(--green);font-weight:700;">Praise</span><span>Positives</span></div>
         <div class="issue-count">${items.length}</div>
       </div>
       <div class="issue-list">${rows}</div>
     </div>`;
 }
 
-// ─── Init ──────────────────────────────────────────────────────────────
 document.getElementById('input-pr').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitReview();
 });
