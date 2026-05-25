@@ -109,7 +109,9 @@ The agent uses 3 sequential Claude API calls per review, each building on prior 
 |----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | (required) | Anthropic API key |
 | `GITHUB_TOKEN` | (required) | GitHub PAT with `repo` scope |
-| `GITHUB_WEBHOOK_SECRET` | — | HMAC-SHA256 webhook verification |
+| `GITHUB_WEBHOOK_SECRET` | (required for webhooks) | HMAC-SHA256 webhook verification |
+| `API_KEY` | — | Optional API key for endpoint authentication |
+| `CORS_ORIGINS` | `http://localhost:8000,http://127.0.0.1:8000` | Comma-separated allowed CORS origins |
 | `CLAUDE_MODEL` | `claude-sonnet-4-20250514` | Claude model to use |
 | `PR_REVIEW_MODE` | `full` | `full` / `diff-only` / `auto` |
 | `PR_REVIEW_MAX_FILES` | `20` | Max files to include in context |
@@ -173,6 +175,28 @@ gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker
 Set `TOKEN_BUDGET_WEEKLY` and check the dashboard for real-time budget tracking.
 The stats bar shows a color-coded progress bar: green (< 50%), yellow (50–80%), red (> 80%).
 
+## Security
+
+### API Authentication
+
+Set `API_KEY` environment variable to enable bearer token authentication on all `/api/*` endpoints. When set, requests must include:
+
+```
+Authorization: Bearer your-api-key-here
+```
+
+### Webhook Security
+
+`GITHUB_WEBHOOK_SECRET` is **required** for webhook endpoints. Webhooks without a valid HMAC-SHA256 signature will be rejected. Generate a secret with:
+
+```bash
+openssl rand -hex 32
+```
+
+### CORS Configuration
+
+Configure allowed origins with `CORS_ORIGINS` (comma-separated). Defaults to localhost only.
+
 ## GitHub Token Permissions
 
 Minimum required scopes: `repo` (private repos) or `public_repo` (public). This allows reading PR diffs and posting review comments.
@@ -190,3 +214,27 @@ Add `.pr-review-rules.md` to your repository root (or `.github/pr-review-rules.m
 ```
 
 Also supported: `CONTEXT.md` / `.pr-review-context.md` / `CONTRIBUTING.md` for general project context.
+
+## Changelog
+
+### v1.1.0 - Security & Reliability Improvements
+
+**Security Fixes:**
+- Fixed XSS vulnerability in frontend dashboard
+- Added optional API key authentication (`API_KEY` env var)
+- Webhook signature verification now required (no more bypass)
+- CORS origins now configurable (defaults to localhost only)
+
+**Bug Fixes:**
+- Fixed job ID collision when submitting multiple reviews rapidly
+- Fixed KeyError crash in stats endpoint with incomplete data
+- Fixed fragile JSON parsing for Claude responses
+- Fixed metrics dead code in throughput calculation
+- Fixed token tracker week start normalization
+- Updated deprecated `datetime.utcnow()` calls
+- Fixed GitHub Actions workflow to install all dependencies
+
+**New Features:**
+- Added `CORS_ORIGINS` configuration
+- Added `API_KEY` for endpoint authentication
+- Added `backend/__init__.py` for proper module imports

@@ -1,6 +1,6 @@
 """Review quality metrics – aggregates over completed reviews."""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from job_store import get_job_store
@@ -18,7 +18,7 @@ class ReviewMetrics:
     def _done_jobs(self, days: Optional[int] = 7) -> list:
         jobs = self._store.list_by_status("done")
         if days is not None and days > 0:
-            since = (datetime.utcnow() - timedelta(days=days)).timestamp()
+            since = (datetime.now(timezone.utc) - timedelta(days=days)).timestamp()
             jobs = [j for j in jobs if j.get("_created_ts", 0) >= since]
         return jobs
 
@@ -97,12 +97,9 @@ class ReviewMetrics:
         for job in done:
             created = job.get("created_at", "")[:10]
             daily_counts[created] = daily_counts.get(created, 0) + 1
-            result = job.get("result", {})
-            total_files += result.get("title", "") and 0 or 0  # can't get files from result easily
-
-        # Count files from job metadata if available
-        for job in done:
-            files = job.get("_files_changed") or 0
+            # Try to get file count from result
+            result = job.get("result") or {}
+            files = result.get("files_reviewed") or job.get("_files_changed") or 0
             total_files += files
         if total_files == 0:
             # Fallback: just count reviews

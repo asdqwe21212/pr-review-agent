@@ -7,6 +7,7 @@ import hmac
 import hashlib
 import asyncio
 import logging
+import secrets
 from fastapi import Request, HTTPException
 from fastapi.routing import APIRouter
 
@@ -18,7 +19,10 @@ WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", "")
 
 def verify_signature(payload: bytes, signature: str) -> bool:
     if not WEBHOOK_SECRET:
-        return True  # Skip verification if no secret configured
+        logger.warning("GITHUB_WEBHOOK_SECRET not configured - rejecting webhook for security")
+        return False
+    if not signature:
+        return False
     expected = "sha256=" + hmac.new(
         WEBHOOK_SECRET.encode(), payload, hashlib.sha256
     ).hexdigest()
@@ -45,11 +49,11 @@ async def github_webhook(request: Request):
 
             from job_store import get_job_store
             from server import run_review_job
-            from datetime import datetime
+            from datetime import datetime, timezone
 
             job_store = get_job_store()
-            now = datetime.utcnow()
-            job_id = f"webhook_{pr_number}_{int(now.timestamp())}"
+            now = datetime.now(timezone.utc)
+            job_id = f"webhook_{pr_number}_{int(now.timestamp())}_{secrets.token_hex(4)}"
             job_data = {
                 "job_id": job_id,
                 "status": "pending",

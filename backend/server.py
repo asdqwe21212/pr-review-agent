@@ -6,8 +6,9 @@ import os
 import json
 import asyncio
 import logging
+import secrets
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,12 +37,26 @@ app = FastAPI(title="PR Review Agent", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# CORS - configurable origins
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API Key Authentication (optional)
+API_KEY = os.getenv("API_KEY")
+
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    """Optional API key authentication. Set API_KEY env var to enable."""
+    if API_KEY and request.url.path.startswith("/api/"):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer ") or auth_header[7:] != API_KEY:
+            return JSONResponse(status_code=401, content={"detail": "Invalid or missing API key"})
+    return await call_next(request)
 
 # Mount webhook router
 app.include_router(webhook_router)
@@ -93,8 +108,8 @@ async def run_review_job(job_id: str, repo: str, pr_number: int, post_comment: b
 @limiter.limit("10/minute")
 async def start_review(req: ReviewRequest, request: Request, background_tasks: BackgroundTasks):
     """Start an async PR review job."""
-    job_id = f"job_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{req.pr_number}"
-    now = datetime.utcnow()
+    job_id = f"job_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{req.pr_number}_{secrets.token_hex(4)}"
+    now = datetime.now(timezone.utc)
     job_data = {
         "job_id": job_id,
         "status": "pending",
@@ -123,20 +138,21 @@ async def get_job(job_id: str):
 @app.get("/api/jobs")
 async def list_jobs(repo: Optional[str] = None, days: int = 7):
     """List all jobs, optionally filtered by repo and time window."""
-    since = (datetime.utcnow() - timedelta(days=days)).timestamp() if days > 0 else None
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).timestamp() if days > 0 else None
     return job_store.list_all(repo=repo, since=since)
 
 
 @app.get("/api/stats")
 async def get_stats(days: int = 7):
     """Aggregate stats across all jobs within the time window."""
-    since = (datetime.utcnow() - timedelta(days=days)).timestamp()
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).timestamp()
     all_jobs = job_store.list_all(since=since)
     done = [j for j in all_jobs if j.get("status") == "done"]
-    total_tokens = sum(
-        j["result"]["token_usage"]["input"] + j["result"]["token_usage"]["output"]
-        for j in done if j.get("result") and j["result"].get("token_usage")
-    )
+    total_tokens = 0
+    for j in done:
+        result = j.get("result") or {}
+        usage = result.get("token_usage") or {}
+        total_tokens += usage.get("input", 0) + usage.get("output", 0)
     scores = [
         j["result"]["review"]["overall_score"]
         for j in done if j.get("result") and j["result"].get("review", {}).get("overall_score")

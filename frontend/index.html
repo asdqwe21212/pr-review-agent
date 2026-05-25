@@ -807,6 +807,16 @@ let selectedJob = null;
 let pollInterval = null;
 let statsInterval = null;
 
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function api(path, opts = {}) {
   const r = await fetch(API + path, {
     headers: { 'Content-Type': 'application/json' },
@@ -860,14 +870,16 @@ async function refreshJobs() {
   container.innerHTML = jobs.map(j => {
     const score = j.result?.review?.overall_score;
     const scoreColor = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--yellow)' : 'var(--red)';
-    const repoShort = j.repo ? j.repo.split('/')[1] || j.repo : '—';
+    const repoShort = j.repo ? escapeHtml(j.repo.split('/')[1] || j.repo) : '—';
     const time = j.created_at ? new Date(j.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+    const jobId = escapeHtml(j.job_id);
+    const status = escapeHtml(j.status);
     return `
-      <div class="job-item ${j.job_id === selectedJob ? 'active' : ''}" onclick="selectJob('${j.job_id}')">
-        <div class="job-status-dot ${j.status}"></div>
+      <div class="job-item ${jobId === selectedJob ? 'active' : ''}" onclick="selectJob('${jobId}')">
+        <div class="job-status-dot ${status}"></div>
         <div class="job-info">
           <div class="job-repo">${repoShort} <span style="color:var(--text-dim);font-weight:400;">#${j.pr_number}</span></div>
-          <div class="job-meta">${j.status.toUpperCase()} &middot; ${time}</div>
+          <div class="job-meta">${status.toUpperCase()} &middot; ${time}</div>
         </div>
         ${score !== undefined ? `<div class="job-score" style="color:${scoreColor}">${score}</div>` : ''}
       </div>`;
@@ -953,7 +965,7 @@ async function renderJobDetail(jobId) {
       <div class="review-detail">
         <div style="color:var(--red);padding:24px;background:var(--red-bg);border:1px solid #fecaca;border-radius:10px;">
           <div style="font-size:14px;font-weight:600;margin-bottom:8px;">Review Failed</div>
-          <div style="font-size:12px;color:var(--text-dim)">${job.error}</div>
+          <div style="font-size:12px;color:var(--text-dim)">${escapeHtml(job.error)}</div>
         </div>
       </div>`;
     return;
@@ -969,10 +981,10 @@ async function renderJobDetail(jobId) {
   content.innerHTML = `
     <div class="review-detail">
       <div class="review-header">
-        <div class="review-pr-number">${r.repo} &middot; PR #${r.pr_number}</div>
-        <div class="review-title">${r.title}</div>
+        <div class="review-pr-number">${escapeHtml(r.repo)} &middot; PR #${r.pr_number}</div>
+        <div class="review-title">${escapeHtml(r.title)}</div>
         <div class="review-meta-row">
-          <div class="review-meta-item">Severity: <span class="sev-${rev.severity}">${(rev.severity || '').toUpperCase()}</span></div>
+          <div class="review-meta-item">Severity: <span class="sev-${escapeHtml(rev.severity)}">${escapeHtml((rev.severity || '').toUpperCase())}</span></div>
           <div class="review-meta-item">Bugs: <span>${rev.bugs?.length || 0}</span></div>
           <div class="review-meta-item">Security: <span>${rev.security?.length || 0}</span></div>
           <div class="review-meta-item">Performance: <span>${rev.performance?.length || 0}</span></div>
@@ -992,7 +1004,7 @@ async function renderJobDetail(jobId) {
           <div class="score-number">${score}</div>
         </div>
         <div class="score-info">
-          <div class="score-summary">${rev.summary || ''}</div>
+          <div class="score-summary">${escapeHtml(rev.summary || '')}</div>
           <div class="verdict-badge ${rev.approve ? 'approve' : 'changes'}">
             ${rev.approve ? 'Approved' : 'Changes Requested'}
           </div>
@@ -1023,9 +1035,9 @@ async function renderJobDetail(jobId) {
 function issueSection(title, icon, colorClass, items) {
   const rows = (items || []).map(item => `
     <div class="issue-item">
-      ${item.line ? `<div class="issue-location">${item.line}</div>` : ''}
-      <div class="issue-desc">${item.description || ''}</div>
-      ${item.suggestion ? `<div class="issue-suggestion">${item.suggestion}</div>` : ''}
+      ${item.line ? `<div class="issue-location">${escapeHtml(item.line)}</div>` : ''}
+      <div class="issue-desc">${escapeHtml(item.description || '')}</div>
+      ${item.suggestion ? `<div class="issue-suggestion">${escapeHtml(item.suggestion)}</div>` : ''}
     </div>`).join('');
 
   const labels = { 'Bugs': 'Bug', 'Security': 'Vuln', 'Performance': 'Perf', 'Code Quality': 'Style' };
@@ -1048,7 +1060,7 @@ function issueSection(title, icon, colorClass, items) {
 
 function positivesSection(items) {
   if (!items?.length) return '';
-  const rows = items.map(p => `<div class="positive-item">${p}</div>`).join('');
+  const rows = items.map(p => `<div class="positive-item">${escapeHtml(p)}</div>`).join('');
   return `
     <div class="issue-section issue-section-full">
       <div class="issue-section-header">

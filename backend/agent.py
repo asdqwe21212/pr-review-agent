@@ -3,6 +3,7 @@ PR Review Agent - Multi-turn Claude-powered code review system
 """
 import os
 import json
+import re
 import time
 import logging
 from typing import Optional
@@ -268,10 +269,10 @@ Include all findings from both turns. Return ONLY valid JSON, no markdown fences
         # Parse JSON response
         try:
             clean = turn3_response.strip()
-            if clean.startswith("```"):
-                clean = clean.split("```")[1]
-                if clean.startswith("json"):
-                    clean = clean[4:]
+            # Try to extract JSON from markdown code fences
+            json_match = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', clean, re.DOTALL)
+            if json_match:
+                clean = json_match.group(1).strip()
             review_data = json.loads(clean.strip())
         except json.JSONDecodeError as e:
             logger.warning(f"JSON parse failed: {e}, using fallback")

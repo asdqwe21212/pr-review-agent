@@ -2,7 +2,7 @@
 import os
 import time
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from job_store import get_job_store
@@ -22,8 +22,10 @@ class TokenTracker:
         self.alert_threshold = ALERT_THRESHOLD
 
     def _week_start(self, dt: Optional[datetime] = None) -> datetime:
-        dt = dt or datetime.utcnow()
-        return dt - timedelta(days=dt.weekday())
+        dt = dt or datetime.now(timezone.utc)
+        # Normalize to midnight (start of day) for the Monday of this week
+        monday = dt - timedelta(days=dt.weekday())
+        return monday.replace(hour=0, minute=0, second=0, microsecond=0)
 
     def _all_done_jobs(self) -> list:
         return self._store.list_by_status("done")
@@ -61,7 +63,7 @@ class TokenTracker:
 
     def daily_usage(self, days: int = 7) -> list[dict]:
         """Return daily token breakdown for the last `days` days."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         daily = {}
         for i in range(days):
             day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
@@ -116,7 +118,7 @@ class TokenTracker:
                 "output_tokens": output_tokens,
                 "model": model,
                 "_created_ts": time.time(),
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
                 "type": "token_record",
             },
         )
