@@ -3,7 +3,7 @@ import os
 import json
 import threading
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 
@@ -69,7 +69,7 @@ class FileJobStore(InMemoryJobStore):
                         if created:
                             try:
                                 dt = datetime.fromisoformat(created)
-                                if datetime.utcnow() - dt > timedelta(days=7):
+                                if datetime.now(timezone.utc) - dt > timedelta(days=7):
                                     continue
                             except (ValueError, TypeError):
                                 pass
@@ -103,19 +103,43 @@ class RedisJobStore(InMemoryJobStore):
         self._ttl = 7 * 24 * 3600  # 7 days
 
     def create(self, job_id: str, data: dict) -> None:
+        """创建任务并建立索引"""
         key = f"pr_review:job:{job_id}"
-        self.redis.hset(key, mapping={"job_id": job_id, **data})
-        self.redis.expire(key, self._ttl)
-        self.redis.zadd("pr_review:jobs_index", {job_id: data.get("_created_ts", 0)})
+        pipe = self.redis.pipeline()
+        pipe.hset(key, mapping={"job_id": job_id, **data})
+        pipe.expire(key, self._ttl)
+        pipe.zadd("pr_review:jobs_index", {job_id: data.get("_created_ts", 0)})
+        pipe.sadd(f"pr_review:status:{data.get('status', 'pending')}", job_id)
+        pipe.sadd(f"pr_review:repo:{data.get('repo', 'unknown')}", job_id)
+        pipe.execute()
 
     def get(self, job_id: str) -> Optional[dict]:
         data = self.redis.hgetall(f"pr_review:job:{job_id}")
         return data if data else None
 
     def update(self, job_id: str, updates: dict) -> None:
+        """更新任务状态并维护索引"""
+        old_job = self.get(job_id) or {}
+        old_status = old_job.get("status")
+        new_status = updates.get("status")
+        
         key = f"pr_review:job:{job_id}"
-        if self.redis.exists(key):
-            self.redis.hset(key, mapping=updates)
+        self.redis.hset(key, mapping=updates)
+        
+        # 更新状态索引
+        if old_status and new_status and old_status != new_status:
+            self.redis.srem(f"pr_review:status:{old_status}", job_id)
+            self.redis.sadd(f"pr_review:status:{new_status}", job_id)
+
+    def list_by_status(self, status: str) -> list:
+        """使用索引快速查询"""
+        job_ids = self.redis.smembers(f"pr_review:status:{status}")
+        jobs = []
+        for jid in job_ids:
+            data = self.redis.hgetall(f"pr_review:job:{jid}")
+            if data:
+                jobs.append(data)
+        return jobs
 
     def list_all(self, repo: Optional[str] = None, since: Optional[float] = None) -> list:
         ids = self.redis.zrevrange("pr_review:jobs_index", 0, -1)

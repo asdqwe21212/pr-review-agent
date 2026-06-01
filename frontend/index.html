@@ -858,6 +858,38 @@ async function submitReview() {
   }
 }
 
+let pollController = null;
+
+function stopPolling() {
+  if (pollController) {
+    pollController.abort();
+    pollController = null;
+  }
+}
+
+async function startPolling(jobId) {
+  stopPolling();
+  pollController = new AbortController();
+  const maxRetries = 120;
+  let retries = 0;
+  
+  while (retries < maxRetries && !pollController.signal.aborted) {
+    await refreshJobs();
+    if (selectedJob) await renderJobDetail(selectedJob);
+    
+    try {
+      const fresh = await api('/api/jobs');
+      const hasActive = fresh.some(j => j.status === 'pending' || j.status === 'running');
+      if (!hasActive) break;
+    } catch (e) {
+      if (pollController.signal.aborted) break;
+    }
+    
+    await new Promise(r => setTimeout(r, 2500));
+    retries++;
+  }
+}
+
 async function refreshJobs() {
   const jobs = await api('/api/jobs');
   const container = document.getElementById('job-list');
@@ -885,24 +917,17 @@ async function refreshJobs() {
       </div>`;
   }).join('');
 
-  const hasRunning = jobs.some(j => j.status === 'pending' || j.status === 'running');
-  if (hasRunning && !pollInterval) {
-    pollInterval = setInterval(async () => {
-      await refreshJobs();
-      if (selectedJob) await renderJobDetail(selectedJob);
-      const fresh = await api('/api/jobs');
-      if (!fresh.some(j => j.status === 'pending' || j.status === 'running')) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-      }
-    }, 2500);
-  }
 }
 
 async function selectJob(jobId) {
   selectedJob = jobId;
   await refreshJobs();
   await renderJobDetail(jobId);
+  
+  const job = await api(`/api/jobs/${jobId}`);
+  if (job.status === 'pending' || job.status === 'running') {
+    startPolling(jobId);
+  }
 }
 
 async function refreshStats() {
@@ -1074,6 +1099,8 @@ function positivesSection(items) {
 document.getElementById('input-pr').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitReview();
 });
+
+window.addEventListener('beforeunload', stopPolling);
 
 (async function init() {
   await refreshJobs();

@@ -6,18 +6,20 @@ Designed for teams handling 50+ PRs/week with ~2M tokens weekly budget.
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    PR Review Agent                        │
-│                                                           │
-│  GitHub PR ──► Agent ──► Turn 1: Bug & Security Scan     │
-│                     │──► Turn 2: Performance & Quality    │
-│                     │──► Turn 3: Structured JSON Report   │
-│                     └──► Post Comment to GitHub PR        │
-│                                                           │
-│  FastAPI Server ──► REST API ──► Dashboard UI            │
-│  GitHub Webhook ──► Auto-trigger on PR open/update/label │
-│  Job Store ──► In-Memory / File (JSONL) / Redis          │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                         PR Review Agent                               │
+│                                                                       │
+│  GitHub PR ──► Agent ──► Turn 1: Bug & Security Scan                 │
+│                     │──► Turn 2: Performance & Quality                │
+│                     │──► Turn 3: Structured JSON Report               │
+│                     └──► Post Comment to GitHub PR                    │
+│                                                                       │
+│  FastAPI Server ──► REST API ──► Dashboard UI                        │
+│  GitHub Webhook ──► Auto-trigger on PR open/update/label             │
+│  Task Queue (arq) ──► Async Processing ──► Worker Pool               │
+│  Job Store ──► In-Memory / File (JSONL) / Redis                      │
+│  Monitoring ──► Prometheus Metrics ──► Grafana                       │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -67,6 +69,17 @@ export $(cat ../config/.env | xargs)
 python server.py
 
 # Open http://localhost:8000
+```
+
+### 3c. Worker (Production)
+
+For production deployments with async task queue:
+
+```bash
+# Start the arq worker
+python scripts/start_worker.py
+
+# Worker reads REDIS_URL and WORKER_CONCURRENCY from environment
 ```
 
 ### 3c. GitHub Actions (Automated)
@@ -122,7 +135,11 @@ The agent uses 3 sequential Claude API calls per review, each building on prior 
 | `TOKEN_BUDGET_WEEKLY` | `2000000` | Weekly token budget for alerts |
 | `TOKEN_BUDGET_ALERT_THRESHOLD` | `0.8` | Alert at 80% budget consumed |
 | `LOG_LEVEL` | `INFO` | Logging level |
-| `REDIS_URL` | — | Redis connection (optional, for prod) |
+| `REDIS_URL` | — | Redis connection (required for production) |
+| `WORKER_CONCURRENCY` | `10` | Max concurrent review tasks per worker |
+| `MAX_QUEUE_SIZE` | `100` | Max pending reviews in queue |
+| `ENVIRONMENT` | `production` | Environment identifier for logging |
+| `SENTRY_DSN` | — | Optional Sentry error tracking DSN |
 
 ## API Endpoints
 
@@ -137,7 +154,10 @@ The agent uses 3 sequential Claude API calls per review, each building on prior 
 | `GET` | `/api/metrics/quality` | Score distribution, severity, approval rate |
 | `GET` | `/api/metrics/throughput` | Reviews/day, files reviewed |
 | `POST` | `/webhook/github` | GitHub webhook handler |
-| `GET` | `/api/health` | Health check |
+| `GET` | `/api/health` | Health check (Redis, queue status) |
+| `GET` | `/api/health/ready` | Kubernetes readiness probe |
+| `GET` | `/api/health/live` | Kubernetes liveness probe |
+| `GET` | `/metrics` | Prometheus metrics endpoint |
 
 ## Token Usage
 
@@ -158,7 +178,25 @@ Three backends, auto-selected:
 |---------|---------|-------------|
 | `InMemoryJobStore` | (fallback) | Lost on restart |
 | `FileJobStore` | Default | JSONL file at `data/jobs.jsonl` |
-| `RedisJobStore` | Set `REDIS_URL` | Redis, with 7-day TTL |
+| `RedisJobStore` | Set `REDIS_URL` | Redis, with 7-day TTL, status indexing |
+
+### Task Queue (arq + Redis)
+
+For production workloads, the system uses an async task queue:
+
+```bash
+# Start the API server
+python server.py
+
+# Start worker(s) in separate processes
+python scripts/start_worker.py
+```
+
+Features:
+- Async task processing with automatic retries (3 attempts)
+- Request deduplication prevents duplicate reviews
+- Result caching (1 hour TTL based on PR head SHA)
+- Graceful shutdown with active task tracking
 
 ### Process Manager
 
@@ -166,7 +204,7 @@ Three backends, auto-selected:
 # Single worker (fine for < 100 PRs/week)
 python server.py
 
-# Multi-worker production
+# Multi-worker production with gunicorn
 gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
@@ -216,6 +254,34 @@ Add `.pr-review-rules.md` to your repository root (or `.github/pr-review-rules.m
 Also supported: `CONTEXT.md` / `.pr-review-context.md` / `CONTRIBUTING.md` for general project context.
 
 ## Changelog
+
+### v1.2.0 - Production Readiness
+
+**New Features:**
+- Async task queue with arq + Redis for concurrent processing
+- Request deduplication to prevent duplicate reviews
+- Result caching with SHA-based keys (1 hour TTL)
+- Prometheus metrics endpoint (`/metrics`)
+- Kubernetes health probes (`/api/health/ready`, `/api/health/live`)
+- Graceful shutdown with active task tracking
+- Thread-safe singleton pattern for all managers
+- Comprehensive unit tests for core modules
+
+**Bug Fixes:**
+- Fixed deprecated `datetime.utcnow()` (Python 3.12+ compatible)
+- Fixed frontend polling memory leak using AbortController
+- Fixed asyncio event loop handling with `asyncio.to_thread()`
+- Enhanced RedisJobStore with status indexing for faster queries
+
+**Infrastructure:**
+- Added `backend/tasks.py` - arq task definitions
+- Added `backend/dedup.py` - request deduplication
+- Added `backend/cache.py` - result caching
+- Added `backend/shutdown.py` - graceful shutdown
+- Added `backend/metrics_middleware.py` - Prometheus middleware
+- Added `backend/singleton.py` - thread-safe singleton decorator
+- Added `scripts/start_worker.py` - Worker startup script
+- Added comprehensive test suite in `tests/`
 
 ### v1.1.0 - Security & Reliability Improvements
 

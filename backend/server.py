@@ -25,9 +25,25 @@ from rate_limit import limiter
 from logging_config import configure_logging
 from token_tracker import get_token_tracker
 from metrics import get_review_metrics
+from metrics_middleware import PrometheusMiddleware, get_metrics_response
 
 configure_logging()
 logger = logging.getLogger(__name__)
+
+# arq queue connection pool
+_queue_pool = None
+
+async def get_queue():
+    """获取 arq 队列连接"""
+    global _queue_pool
+    if _queue_pool is None:
+        from arq import create_pool
+        from arq.connections import RedisSettings
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        _queue_pool = await create_pool(
+            RedisSettings.from_dsn(redis_url)
+        )
+    return _queue_pool
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
@@ -45,6 +61,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Prometheus metrics middleware
+app.add_middleware(PrometheusMiddleware)
 
 # API Key Authentication (optional)
 API_KEY = os.getenv("API_KEY")
@@ -92,10 +111,8 @@ async def run_review_job(job_id: str, repo: str, pr_number: int, post_comment: b
     job_store.update(job_id, {"status": "running"})
     try:
         agent = get_agent()
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None,
-            lambda: agent.review_pr(repo, pr_number, post_comment)
+        result = await asyncio.to_thread(
+            agent.review_pr, repo, pr_number, post_comment
         )
         job_store.update(job_id, {"status": "done", "result": result})
         logger.info(f"Job {job_id} completed — score: {result['review'].get('overall_score', 'N/A')}")
@@ -121,8 +138,26 @@ async def start_review(req: ReviewRequest, request: Request, background_tasks: B
         "_created_ts": now.timestamp(),
     }
     job_store.create(job_id, job_data)
-    background_tasks.add_task(run_review_job, job_id, req.repo, req.pr_number, req.post_comment)
-    logger.info(f"Job {job_id} created for {req.repo}#{req.pr_number}")
+    
+    # 尝试使用 arq 队列
+    try:
+        queue = await get_queue()
+        await queue.enqueue_job(
+            "review_task",
+            job_id,
+            req.repo,
+            req.pr_number,
+            req.post_comment,
+            _job_id=job_id,
+        )
+        job_store.update(job_id, {"status": "queued"})
+        logger.info(f"Job {job_id} queued for {req.repo}#{req.pr_number}")
+    except Exception as e:
+        # 降级到 BackgroundTasks
+        logger.warning(f"Failed to queue job, falling back to BackgroundTasks: {e}")
+        background_tasks.add_task(run_review_job, job_id, req.repo, req.pr_number, req.post_comment)
+        logger.info(f"Job {job_id} created for {req.repo}#{req.pr_number}")
+    
     return job_data
 
 
@@ -203,8 +238,57 @@ async def get_throughput(days: int = 7):
 
 
 @app.get("/api/health")
-async def health():
-    return {"status": "ok", "version": "1.0.0"}
+async def health_check():
+    """增强的健康检查"""
+    checks = {
+        "api": "ok",
+        "redis": "ok",
+        "queue": "ok",
+    }
+    
+    # 检查 Redis 连接
+    try:
+        if hasattr(job_store, 'redis'):
+            job_store.redis.ping()
+    except Exception as e:
+        checks["redis"] = f"error: {str(e)}"
+    
+    # 检查队列
+    try:
+        await get_queue()
+    except Exception as e:
+        checks["queue"] = f"error: {str(e)}"
+    
+    all_ok = all(v == "ok" for v in checks.values())
+    
+    return {
+        "status": "healthy" if all_ok else "degraded",
+        "version": "1.1.0",
+        "checks": checks,
+    }
+
+
+@app.get("/api/health/ready")
+async def readiness():
+    """Kubernetes readiness probe"""
+    try:
+        if hasattr(job_store, 'redis'):
+            job_store.redis.ping()
+    except Exception:
+        raise HTTPException(503, detail="Redis unavailable")
+    return {"ready": True}
+
+
+@app.get("/api/health/live")
+async def liveness():
+    """Kubernetes liveness probe"""
+    return {"alive": True}
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus 指标端点"""
+    return get_metrics_response()
 
 
 # Serve frontend
