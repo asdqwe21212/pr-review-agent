@@ -115,6 +115,15 @@ The fastest way is via the web UI. Start the server (`python backend/server.py`)
 
 The provider is persisted at `data/llm_config.json` and is hot-reloaded on every review job, so the next PR you submit uses the new provider.
 
+### Dashboard language
+
+The dashboard ships with **English** and **简体中文** and exposes a one-click toggle in the header (the pill that reads `EN` or `中`):
+
+- The active language is stored in `localStorage` under `pr-review.lang`, so the choice persists across reloads and browser restarts
+- On first visit the language is auto-detected from `navigator.language` — anything starting with `zh` lands on Chinese, anything else on English
+- Switching languages re-translates all dashboard chrome, the Settings dialog (including provider notes and hints), the job list status pills, the review detail labels, the loading messages, and the error/alert text
+- LLM-generated review content (the `summary`, `bugs`, `security`, `performance`, `quality`, `positives` fields) is left in the language the model produced it in — that is controlled by your prompt and provider, not by the UI language
+
 ### Switching providers via environment variables
 
 If you'd rather configure at deploy time, the same fields can be set as env vars. The dashboard `data/llm_config.json` (if it exists) takes precedence over the env.
@@ -349,6 +358,7 @@ Also supported: `CONTEXT.md` / `.pr-review-context.md` / `CONTRIBUTING.md` for g
 - Custom model support: the **Model** field is free-form on both wire formats, so any model id works (claude-3-opus-*, claude-3-haiku-*, gpt-4o-*, deepseek-*, llama*, fine-tunes, proxy routing keys, …)
 - Anthropic provider now accepts an optional **Base URL**, so you can route Anthropic-protocol traffic through a proxy while keeping the same review output
 - Header status indicator reflects the active provider and shows a warning dot when no API key is set
+- Dashboard language toggle: one-click switch between **English** and **简体中文** in the header, with `localStorage` persistence and `navigator.language` auto-detection on first visit
 - Added `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TEMPERATURE` environment variables (dashboard `data/llm_config.json` still wins when present)
 
 **Notes:**

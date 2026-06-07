@@ -976,6 +976,32 @@
     gap: 12px;
   }
 
+  .lang-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 36px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.6px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-xs);
+  }
+  .lang-btn:hover {
+    background: var(--surface-strong);
+    color: var(--emerald-800);
+    border-color: var(--border-bright);
+    transform: translateY(-1px);
+  }
+
   .settings-btn {
     display: inline-flex;
     align-items: center;
@@ -1140,10 +1166,11 @@
     <div class="header-actions">
       <div class="header-status">
         <div class="status-dot" id="provider-dot"></div>
-        <span id="agent-status">Loading…</span>
+        <span id="agent-status" data-i18n="status.loading">Loading…</span>
       </div>
-      <button class="settings-btn" onclick="openSettings()" title="Configure LLM">
-        <span class="icon">⚙</span><span>Settings</span>
+      <button class="lang-btn" id="lang-toggle" onclick="toggleLanguage()" data-i18n="header.lang.toggle" data-i18n-title="header.lang.title" title="Switch language">EN</button>
+      <button class="settings-btn" onclick="openSettings()" data-i18n-title="header.settings" title="Configure LLM">
+        <span class="icon">⚙</span><span data-i18n="header.settings">Settings</span>
       </button>
     </div>
   </header>
@@ -1152,37 +1179,37 @@
     <!-- Stats Bar -->
     <div class="stats-bar">
       <div class="stat-item">
-        <div class="stat-label">Total Reviews</div>
+        <div class="stat-label" data-i18n="stats.totalReviews">Total Reviews</div>
         <div class="stat-value accent" id="stat-total">0</div>
-        <div class="stat-sub">all time</div>
+        <div class="stat-sub" data-i18n="stats.allTime">all time</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Completed</div>
+        <div class="stat-label" data-i18n="stats.completed">Completed</div>
         <div class="stat-value green" id="stat-done">0</div>
-        <div class="stat-sub">successful</div>
+        <div class="stat-sub" data-i18n="stats.successful">successful</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Running</div>
+        <div class="stat-label" data-i18n="stats.running">Running</div>
         <div class="stat-value" id="stat-running">0</div>
-        <div class="stat-sub">in progress</div>
+        <div class="stat-sub" data-i18n="stats.inProgress">in progress</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Avg Score</div>
+        <div class="stat-label" data-i18n="stats.avgScore">Avg Score</div>
         <div class="stat-value orange" id="stat-score">&mdash;</div>
-        <div class="stat-sub">out of 100</div>
+        <div class="stat-sub" data-i18n="stats.outOf100">out of 100</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Tokens Used</div>
+        <div class="stat-label" data-i18n="stats.tokensUsed">Tokens Used</div>
         <div class="stat-value" id="stat-tokens">0</div>
-        <div class="stat-sub">total</div>
+        <div class="stat-sub" data-i18n="stats.total">total</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Weekly Budget</div>
+        <div class="stat-label" data-i18n="stats.weeklyBudget">Weekly Budget</div>
         <div class="stat-value" id="stat-budget">0</div>
         <div class="budget-bar-container">
           <div class="budget-bar" id="budget-bar"></div>
         </div>
-        <div class="stat-sub" id="stat-budget-sub">this week</div>
+        <div class="stat-sub" id="stat-budget-sub" data-i18n="stats.thisWeek">this week</div>
       </div>
     </div>
 
@@ -1190,34 +1217,34 @@
     <aside class="sidebar">
       <!-- Submit Form -->
       <div class="form-panel">
-        <div class="panel-title">New Review</div>
+        <div class="panel-title" data-i18n="form.newReview">New Review</div>
         <div class="form-group">
-          <label class="form-label">Repository</label>
-          <input class="form-input" id="input-repo" type="text" placeholder="owner/repo-name">
+          <label class="form-label" data-i18n="form.repository">Repository</label>
+          <input class="form-input" id="input-repo" type="text" data-i18n-placeholder="form.repoPlaceholder" placeholder="owner/repo-name">
         </div>
         <div class="form-group">
-          <label class="form-label">PR Number</label>
-          <input class="form-input" id="input-pr" type="number" placeholder="42">
+          <label class="form-label" data-i18n="form.prNumber">PR Number</label>
+          <input class="form-input" id="input-pr" type="number" data-i18n-placeholder="form.prPlaceholder" placeholder="42">
         </div>
         <div class="form-group">
           <label class="checkbox-row">
             <input type="checkbox" id="input-comment" checked>
-            Post comment to GitHub
+            <span data-i18n="form.postComment">Post comment to GitHub</span>
           </label>
         </div>
         <button class="btn-primary" id="btn-review" onclick="submitReview()">
-          Start Review
+          <span data-i18n="form.startReview">Start Review</span>
         </button>
       </div>
 
       <!-- Job List -->
       <div class="jobs-panel">
         <div class="jobs-header">
-          Recent Jobs
+          <span data-i18n="jobs.recent">Recent Jobs</span>
           <div class="status-dot" style="margin-left: auto;"></div>
         </div>
         <div id="job-list">
-          <div style="padding: 32px; text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 500;">
+          <div style="padding: 32px; text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 500;" data-i18n="jobs.empty">
             No reviews yet
           </div>
         </div>
@@ -1228,7 +1255,7 @@
     <div class="content" id="content">
       <div class="empty-state">
         <div class="empty-icon">⌘</div>
-        <div class="empty-text">Select a job or submit a new PR review</div>
+        <div class="empty-text" data-i18n="empty.selectOrSubmit">Select a job or submit a new PR review</div>
       </div>
     </div>
   </main>
@@ -1239,6 +1266,300 @@ const API = '';
 let selectedJob = null;
 let pollController = null;
 let statsInterval = null;
+
+// --- i18n ---
+const I18N = {
+  en: {
+    // Header
+    'header.settings': 'Settings',
+    'header.lang.toggle': 'EN',
+    'header.lang.title': 'Switch language',
+    // Stats
+    'stats.totalReviews': 'Total Reviews',
+    'stats.completed': 'Completed',
+    'stats.running': 'Running',
+    'stats.avgScore': 'Avg Score',
+    'stats.tokensUsed': 'Tokens Used',
+    'stats.weeklyBudget': 'Weekly Budget',
+    'stats.allTime': 'all time',
+    'stats.successful': 'successful',
+    'stats.inProgress': 'in progress',
+    'stats.outOf100': 'out of 100',
+    'stats.total': 'total',
+    'stats.thisWeek': 'this week',
+    'stats.weeklyBudgetSub': 'of {budget} this week',
+    // Form
+    'form.newReview': 'New Review',
+    'form.repository': 'Repository',
+    'form.prNumber': 'PR Number',
+    'form.postComment': 'Post comment to GitHub',
+    'form.startReview': 'Start Review',
+    'form.submitting': 'Submitting…',
+    'form.repoPlaceholder': 'owner/repo-name',
+    'form.prPlaceholder': '42',
+    // Jobs
+    'jobs.recent': 'Recent Jobs',
+    'jobs.empty': 'No reviews yet',
+    // Empty state
+    'empty.selectOrSubmit': 'Select a job or submit a new PR review',
+    // Settings modal
+    'settings.title': 'LLM Configuration',
+    'settings.provider': 'Provider',
+    'settings.baseUrl': 'Base URL',
+    'settings.model': 'Model',
+    'settings.apiKey': 'API Key',
+    'settings.temperature': 'Temperature',
+    'settings.cancel': 'Cancel',
+    'settings.save': 'Save',
+    'settings.saving': 'Saving…',
+    'settings.close': 'Close',
+    'settings.configTitle': 'Configure LLM',
+    'settings.apiKeyPlaceholderNew': 'Paste your API key',
+    'settings.apiKeyPlaceholderSet': '••••••••  (leave blank to keep)',
+    'settings.apiKeyHint': 'Leave blank to keep the existing key. The key is stored locally on the server and never sent back to the browser.',
+    'settings.temperatureHint': 'Range 0.0 – 2.0. Lower = more deterministic reviews.',
+    'settings.baseUrlHintAnthropic': 'Optional. Leave blank for the official Anthropic endpoint. Set this when using an Anthropic-protocol proxy (LiteLLM, AWS Bedrock adapter, gateway, …).',
+    'settings.baseUrlHintOpenai': 'Required. Endpoint that speaks the OpenAI Chat Completions protocol.',
+    // Provider presets (label + note)
+    'preset.anthropic.label': 'Anthropic (Claude)',
+    'preset.anthropic.note': 'Native Anthropic Messages API. No base URL required. The model name is sent verbatim, so any Anthropic-published model id works (e.g. claude-3-5-sonnet-*, claude-3-opus-*, claude-3-haiku-*).',
+    'preset.anthropic-custom.label': 'Custom (Anthropic-compatible)',
+    'preset.anthropic-custom.note': 'Point at any Anthropic-protocol endpoint — for example a LiteLLM proxy, AWS Bedrock Anthropic adapter, or self-hosted gateway. The model name is forwarded as-is.',
+    'preset.openai.label': 'OpenAI',
+    'preset.openai.note': 'Uses OpenAI Chat Completions format. Any model id is accepted (gpt-4o, gpt-4-turbo, fine-tunes, etc.).',
+    'preset.deepseek.label': 'DeepSeek',
+    'preset.deepseek.note': 'DeepSeek uses an OpenAI-compatible endpoint. Try deepseek-chat or deepseek-reasoner.',
+    'preset.moonshot.label': 'Moonshot (Kimi)',
+    'preset.moonshot.note': 'Moonshot Kimi. OpenAI-compatible API at api.moonshot.cn. Model ids: moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k.',
+    'preset.zhipu.label': '智谱 GLM',
+    'preset.zhipu.note': '智谱 GLM series. OpenAI-compatible API at open.bigmodel.cn. Model ids: glm-4-flash, glm-4, glm-4-plus.',
+    'preset.ollama.label': 'Ollama (local)',
+    'preset.ollama.note': 'Local Ollama daemon. Use any model you have pulled (llama3.1, qwen2.5, mistral, …). The default Ollama key is "ollama" — leave API key blank or use any value.',
+    'preset.custom.label': 'Custom (OpenAI-compatible)',
+    'preset.custom.note': 'Point at any OpenAI Chat-Completions-compatible endpoint (vLLM, TGI, LM Studio, Together, Groq, OpenRouter, …) and supply a model id.',
+    // Status pill
+    'status.connected': 'Connected',
+    'status.noApiKey': 'No API key',
+    'status.loading': 'Loading…',
+    'status.unreachable': 'Backend unreachable',
+    'status.template': '{provider} · {state}',
+    // Alerts / errors
+    'error.repoAndPrRequired': 'Please enter a repository and PR number.',
+    'error.repoFormat': 'Repository must be in format: owner/repo',
+    'error.baseUrlRequired': 'Base URL is required for OpenAI-compatible providers.',
+    'error.modelRequired': 'Model is required.',
+    'error.loadConfig': 'Failed to load config: {msg}',
+    'error.saveConfig': 'Failed to save: {msg}',
+    'error.genericPrefix': 'Error: {msg}',
+    // Loading messages
+    'loading.fetchPr': 'Fetching PR context from GitHub...',
+    'loading.turn1': 'Turn 1: Scanning for bugs & security vulnerabilities...',
+    'loading.turn2': 'Turn 2: Analyzing performance & code quality...',
+    'loading.turn3': 'Turn 3: Generating structured review report...',
+    // Review detail labels
+    'review.failed': 'Review Failed',
+    'review.approved': 'Approved',
+    'review.changes': 'Changes Requested',
+    'review.severity': 'Severity',
+    'review.bugs': 'Bugs',
+    'review.security': 'Security',
+    'review.performance': 'Performance',
+    'review.quality': 'Code Quality',
+    'review.tokens': 'Tokens',
+    'review.input': 'Input',
+    'review.output': 'Output',
+    'review.total': 'Total',
+    'review.turns': 'Turns',
+    'review.noneFound': 'None found',
+    'review.section.Bug': 'Bug',
+    'review.section.Vuln': 'Vuln',
+    'review.section.Perf': 'Perf',
+    'review.section.Style': 'Style',
+    'review.section.Praise': 'Praise',
+    'review.positives': 'Positives',
+    // Job status
+    'job.pending': 'PENDING',
+    'job.running': 'RUNNING',
+    'job.queued': 'QUEUED',
+    'job.done': 'DONE',
+    'job.error': 'ERROR',
+  },
+  zh: {
+    // Header
+    'header.settings': '设置',
+    'header.lang.toggle': '中',
+    'header.lang.title': '切换语言',
+    // Stats
+    'stats.totalReviews': '总评审数',
+    'stats.completed': '已完成',
+    'stats.running': '进行中',
+    'stats.avgScore': '平均分',
+    'stats.tokensUsed': '已用 Token',
+    'stats.weeklyBudget': '本周预算',
+    'stats.allTime': '累计',
+    'stats.successful': '成功',
+    'stats.inProgress': '进行中',
+    'stats.outOf100': '满分 100',
+    'stats.total': '合计',
+    'stats.thisWeek': '本周',
+    'stats.weeklyBudgetSub': '本周共 {budget}',
+    // Form
+    'form.newReview': '新建评审',
+    'form.repository': '仓库',
+    'form.prNumber': 'PR 编号',
+    'form.postComment': '在 GitHub 上发表评论',
+    'form.startReview': '开始评审',
+    'form.submitting': '提交中…',
+    'form.repoPlaceholder': 'owner/repo-name',
+    'form.prPlaceholder': '42',
+    // Jobs
+    'jobs.recent': '最近任务',
+    'jobs.empty': '暂无评审',
+    // Empty state
+    'empty.selectOrSubmit': '选择一个任务或提交一个新的 PR 评审',
+    // Settings modal
+    'settings.title': 'LLM 配置',
+    'settings.provider': '服务商',
+    'settings.baseUrl': '接口地址',
+    'settings.model': '模型',
+    'settings.apiKey': 'API 密钥',
+    'settings.temperature': '温度',
+    'settings.cancel': '取消',
+    'settings.save': '保存',
+    'settings.saving': '保存中…',
+    'settings.close': '关闭',
+    'settings.configTitle': '配置 LLM',
+    'settings.apiKeyPlaceholderNew': '填入你的 API 密钥',
+    'settings.apiKeyPlaceholderSet': '••••••••  （留空表示保留）',
+    'settings.apiKeyHint': '留空表示保留当前密钥。密钥只保存在服务端，不会回传到浏览器。',
+    'settings.temperatureHint': '范围 0.0 – 2.0，越小评审越稳定。',
+    'settings.baseUrlHintAnthropic': '可选。留空走 Anthropic 官方接口；如要使用 Anthropic 协议代理（LiteLLM、AWS Bedrock 适配器、自建网关等）请填入。',
+    'settings.baseUrlHintOpenai': '必填。OpenAI Chat Completions 协议兼容端点。',
+    // Provider presets
+    'preset.anthropic.label': 'Anthropic (Claude)',
+    'preset.anthropic.note': '官方 Anthropic Messages API，无需填写接口地址。模型名直接透传，所以任何 Anthropic 发布的模型 id 都可用（例如 claude-3-5-sonnet-*、claude-3-opus-*、claude-3-haiku-*）。',
+    'preset.anthropic-custom.label': 'Custom (Anthropic 兼容)',
+    'preset.anthropic-custom.note': '指向任意 Anthropic 协议端点，例如 LiteLLM 代理、AWS Bedrock Anthropic 适配器或自建网关。模型名按原样转发。',
+    'preset.openai.label': 'OpenAI',
+    'preset.openai.note': '使用 OpenAI Chat Completions 协议。模型 id 任意（gpt-4o、gpt-4-turbo、微调模型等）。',
+    'preset.deepseek.label': 'DeepSeek',
+    'preset.deepseek.note': 'DeepSeek 提供 OpenAI 兼容接口。可选 deepseek-chat 或 deepseek-reasoner。',
+    'preset.moonshot.label': 'Moonshot (Kimi)',
+    'preset.moonshot.note': 'Moonshot Kimi，OpenAI 兼容端点 api.moonshot.cn。模型 id：moonshot-v1-8k、moonshot-v1-32k、moonshot-v1-128k。',
+    'preset.zhipu.label': '智谱 GLM',
+    'preset.zhipu.note': '智谱 GLM 系列，OpenAI 兼容端点 open.bigmodel.cn。模型 id：glm-4-flash、glm-4、glm-4-plus。',
+    'preset.ollama.label': 'Ollama (本地)',
+    'preset.ollama.note': '本地 Ollama 服务。任意已 pull 的模型都可用（llama3.1、qwen2.5、mistral 等）。默认 key 是 "ollama"，留空或填任意值均可。',
+    'preset.custom.label': 'Custom (OpenAI 兼容)',
+    'preset.custom.note': '指向任意 OpenAI Chat Completions 兼容端点（vLLM、TGI、LM Studio、Together、Groq、OpenRouter 等），并填入对应模型 id。',
+    // Status pill
+    'status.connected': '已连接',
+    'status.noApiKey': '未配置密钥',
+    'status.loading': '加载中…',
+    'status.unreachable': '后端不可达',
+    'status.template': '{provider} · {state}',
+    // Alerts / errors
+    'error.repoAndPrRequired': '请填写仓库和 PR 编号。',
+    'error.repoFormat': '仓库格式必须为 owner/repo',
+    'error.baseUrlRequired': 'OpenAI 兼容服务必须填写接口地址。',
+    'error.modelRequired': '模型不能为空。',
+    'error.loadConfig': '加载配置失败：{msg}',
+    'error.saveConfig': '保存失败：{msg}',
+    'error.genericPrefix': '错误：{msg}',
+    // Loading messages
+    'loading.fetchPr': '正在从 GitHub 拉取 PR 上下文...',
+    'loading.turn1': '第 1 轮：扫描 Bug 与安全漏洞...',
+    'loading.turn2': '第 2 轮：分析性能与代码质量...',
+    'loading.turn3': '第 3 轮：生成结构化评审报告...',
+    // Review detail labels
+    'review.failed': '评审失败',
+    'review.approved': '通过',
+    'review.changes': '需要修改',
+    'review.severity': '严重程度',
+    'review.bugs': 'Bug',
+    'review.security': '安全',
+    'review.performance': '性能',
+    'review.quality': '代码质量',
+    'review.tokens': 'Token',
+    'review.input': '输入',
+    'review.output': '输出',
+    'review.total': '合计',
+    'review.turns': '轮数',
+    'review.noneFound': '未发现',
+    'review.section.Bug': 'Bug',
+    'review.section.Vuln': '漏洞',
+    'review.section.Perf': '性能',
+    'review.section.Style': '风格',
+    'review.section.Praise': '亮点',
+    'review.positives': '亮点',
+    // Job status
+    'job.pending': '等待中',
+    'job.running': '进行中',
+    'job.queued': '排队中',
+    'job.done': '已完成',
+    'job.error': '失败',
+  },
+};
+
+const SUPPORTED_LANGS = ['en', 'zh'];
+const LANG_STORAGE_KEY = 'pr-review.lang';
+
+function detectInitialLang() {
+  try {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (saved && SUPPORTED_LANGS.includes(saved)) return saved;
+  } catch (e) { /* localStorage may be disabled */ }
+  const nav = (navigator.language || 'en').toLowerCase();
+  return nav.startsWith('zh') ? 'zh' : 'en';
+}
+
+let currentLang = detectInitialLang();
+
+function t(key, params) {
+  const dict = I18N[currentLang] || I18N.en;
+  let s = (dict[key] != null) ? dict[key] : (I18N.en[key] != null ? I18N.en[key] : key);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      s = s.split('{' + k + '}').join(String(v));
+    }
+  }
+  return s;
+}
+
+function applyI18n() {
+  document.documentElement.setAttribute('lang', currentLang === 'zh' ? 'zh-CN' : 'en');
+  // data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  // data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  // data-i18n-title (tooltip)
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  // data-i18n-html (for elements with embedded markup / <span> children)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.getAttribute('data-i18n-html'));
+  });
+  // Re-render any visible dynamic UI that uses t() so a language switch
+  // immediately reflects in job list / review detail / status pill.
+  if (typeof renderProviderStatus === 'function' && window.__lastProviderConfig) {
+    renderProviderStatus(window.__lastProviderConfig);
+  }
+  if (typeof refreshJobs === 'function') refreshJobs();
+  if (selectedJob && typeof renderJobDetail === 'function') {
+    renderJobDetail(selectedJob);
+  }
+}
+
+function toggleLanguage() {
+  currentLang = currentLang === 'en' ? 'zh' : 'en';
+  try { localStorage.setItem(LANG_STORAGE_KEY, currentLang); } catch (e) {}
+  applyI18n();
+}
 
 function escapeHtml(str) {
   if (str == null) return '';
@@ -1297,12 +1618,12 @@ async function submitReview() {
   const pr = parseInt(document.getElementById('input-pr').value);
   const postComment = document.getElementById('input-comment').checked;
 
-  if (!repo || !pr) { alert('Please enter a repository and PR number.'); return; }
-  if (!repo.includes('/')) { alert('Repository must be in format: owner/repo'); return; }
+  if (!repo || !pr) { alert(t('error.repoAndPrRequired')); return; }
+  if (!repo.includes('/')) { alert(t('error.repoFormat')); return; }
 
   const btn = document.getElementById('btn-review');
   btn.disabled = true;
-  btn.textContent = 'Submitting...';
+  btn.innerHTML = `<span data-i18n="form.submitting">${escapeHtml(t('form.submitting'))}</span>`;
 
   try {
     const job = await api('/api/review', {
@@ -1314,10 +1635,10 @@ async function submitReview() {
     await refreshJobs();
     selectJob(job.job_id);
   } catch (e) {
-    alert('Error: ' + e.message);
+    alert(t('error.genericPrefix', { msg: e.message }));
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Start Review';
+    btn.innerHTML = `<span data-i18n="form.startReview">${escapeHtml(t('form.startReview'))}</span>`;
   }
 }
 
@@ -1326,7 +1647,7 @@ async function refreshJobs() {
   const container = document.getElementById('job-list');
 
   if (!jobs.length) {
-    container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px;font-weight:500;">No reviews yet</div>';
+    container.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px;font-weight:500;" data-i18n="jobs.empty">${escapeHtml(t('jobs.empty'))}</div>`;
     return;
   }
 
@@ -1342,7 +1663,7 @@ async function refreshJobs() {
         <div class="job-status-dot ${status}"></div>
         <div class="job-info">
           <div class="job-repo">${repoShort} <span style="color:var(--text-muted);font-weight:400;">#${j.pr_number}</span></div>
-          <div class="job-meta">${status.toUpperCase()} &middot; ${time}</div>
+          <div class="job-meta">${escapeHtml(t('job.' + j.status))} &middot; ${time}</div>
         </div>
         ${score !== undefined ? `<div class="job-score" style="color:${scoreColor}">${score}</div>` : ''}
       </div>`;
@@ -1375,7 +1696,7 @@ async function refreshStats() {
     const w = m.weekly;
     document.getElementById('stat-budget').textContent = formatTokens(w.used);
     document.getElementById('stat-budget-sub').textContent =
-      'of ' + formatTokens(w.budget) + ' this week';
+      t('stats.weeklyBudgetSub', { budget: formatTokens(w.budget) });
 
     const bar = document.getElementById('budget-bar');
     if (bar) {
@@ -1400,17 +1721,17 @@ async function renderJobDetail(jobId) {
 
   if (job.status === 'pending' || job.status === 'running') {
     const turnMessages = [
-      'Fetching PR context from GitHub...',
-      'Turn 1: Scanning for bugs & security vulnerabilities...',
-      'Turn 2: Analyzing performance & code quality...',
-      'Turn 3: Generating structured review report...',
+      t('loading.fetchPr'),
+      t('loading.turn1'),
+      t('loading.turn2'),
+      t('loading.turn3'),
     ];
     const turnIdx = Math.floor(Date.now() / 4000) % turnMessages.length;
     content.innerHTML = `
       <div class="loading-state">
         <div class="spinner"></div>
-        <div class="loading-text">${job.status.toUpperCase()}</div>
-        <div class="turn-indicator">${turnMessages[turnIdx]}</div>
+        <div class="loading-text">${escapeHtml(t('job.' + job.status))}</div>
+        <div class="turn-indicator">${escapeHtml(turnMessages[turnIdx])}</div>
       </div>`;
     return;
   }
@@ -1419,7 +1740,7 @@ async function renderJobDetail(jobId) {
     content.innerHTML = `
       <div class="review-detail">
         <div style="color:var(--red);padding:24px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:12px;">
-          <div style="font-size:15px;font-weight:600;margin-bottom:8px;">Review Failed</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:8px;">${escapeHtml(t('review.failed'))}</div>
           <div style="font-size:13px;color:var(--text-secondary)">${escapeHtml(job.error)}</div>
         </div>
       </div>`;
@@ -1439,11 +1760,11 @@ async function renderJobDetail(jobId) {
         <div class="review-pr-number">${escapeHtml(r.repo)} &middot; PR #${r.pr_number}</div>
         <div class="review-title">${escapeHtml(r.title)}</div>
         <div class="review-meta-row">
-          <div class="review-meta-item">Severity: <span class="sev-${escapeHtml(rev.severity)}">${escapeHtml((rev.severity || '').toUpperCase())}</span></div>
-          <div class="review-meta-item">Bugs: <span>${rev.bugs?.length || 0}</span></div>
-          <div class="review-meta-item">Security: <span>${rev.security?.length || 0}</span></div>
-          <div class="review-meta-item">Performance: <span>${rev.performance?.length || 0}</span></div>
-          <div class="review-meta-item">Quality: <span>${rev.quality?.length || 0}</span></div>
+          <div class="review-meta-item">${escapeHtml(t('review.severity'))}: <span class="sev-${escapeHtml(rev.severity)}">${escapeHtml((rev.severity || '').toUpperCase())}</span></div>
+          <div class="review-meta-item">${escapeHtml(t('review.bugs'))}: <span>${rev.bugs?.length || 0}</span></div>
+          <div class="review-meta-item">${escapeHtml(t('review.security'))}: <span>${rev.security?.length || 0}</span></div>
+          <div class="review-meta-item">${escapeHtml(t('review.performance'))}: <span>${rev.performance?.length || 0}</span></div>
+          <div class="review-meta-item">${escapeHtml(t('review.quality'))}: <span>${rev.quality?.length || 0}</span></div>
         </div>
       </div>
 
@@ -1461,33 +1782,33 @@ async function renderJobDetail(jobId) {
         <div class="score-info">
           <div class="score-summary">${escapeHtml(rev.summary || '')}</div>
           <div class="verdict-badge ${rev.approve ? 'approve' : 'changes'}">
-            ${rev.approve ? 'Approved' : 'Changes Requested'}
+            ${escapeHtml(rev.approve ? t('review.approved') : t('review.changes'))}
           </div>
         </div>
       </div>
 
       <div class="issues-grid">
-        ${issueSection('Bugs', '', 'sev-bugs', rev.bugs)}
-        ${issueSection('Security', '', 'sev-security', rev.security)}
-        ${issueSection('Performance', '', 'sev-performance', rev.performance)}
-        ${issueSection('Code Quality', '', 'sev-quality', rev.quality)}
+        ${issueSection(t('review.bugs'), '', 'sev-bugs', rev.bugs, t('review.section.Bug'))}
+        ${issueSection(t('review.security'), '', 'sev-security', rev.security, t('review.section.Vuln'))}
+        ${issueSection(t('review.performance'), '', 'sev-performance', rev.performance, t('review.section.Perf'))}
+        ${issueSection(t('review.quality'), '', 'sev-quality', rev.quality, t('review.section.Style'))}
         ${positivesSection(rev.positives)}
       </div>
 
       <div class="token-bar">
-        <span>Tokens</span>
-        Input: <span>${(r.token_usage?.input || 0).toLocaleString()}</span>
+        <span>${escapeHtml(t('review.tokens'))}</span>
+        ${escapeHtml(t('review.input'))}: <span>${(r.token_usage?.input || 0).toLocaleString()}</span>
         &middot;
-        Output: <span>${(r.token_usage?.output || 0).toLocaleString()}</span>
+        ${escapeHtml(t('review.output'))}: <span>${(r.token_usage?.output || 0).toLocaleString()}</span>
         &middot;
-        Total: <span>${((r.token_usage?.input || 0) + (r.token_usage?.output || 0)).toLocaleString()}</span>
+        ${escapeHtml(t('review.total'))}: <span>${((r.token_usage?.input || 0) + (r.token_usage?.output || 0)).toLocaleString()}</span>
         &middot;
-        Turns: <span>${rev.turns || 3}</span>
+        ${escapeHtml(t('review.turns'))}: <span>${rev.turns || 3}</span>
       </div>
     </div>`;
 }
 
-function issueSection(title, icon, colorClass, items) {
+function issueSection(title, icon, colorClass, items, tag) {
   const rows = (items || []).map(item => `
     <div class="issue-item">
       ${item.line ? `<div class="issue-location">${escapeHtml(item.line)}</div>` : ''}
@@ -1495,20 +1816,17 @@ function issueSection(title, icon, colorClass, items) {
       ${item.suggestion ? `<div class="issue-suggestion">${escapeHtml(item.suggestion)}</div>` : ''}
     </div>`).join('');
 
-  const labels = { 'Bugs': 'Bug', 'Security': 'Vuln', 'Performance': 'Perf', 'Code Quality': 'Style' };
-  const tag = labels[title] || title;
-
   return `
     <div class="issue-section">
       <div class="issue-section-header">
         <div class="icon-label">
-          <span class="${colorClass}">${tag}</span>
-          <span>${title}</span>
+          <span class="${colorClass}">${escapeHtml(tag)}</span>
+          <span>${escapeHtml(title)}</span>
         </div>
         <div class="issue-count">${(items || []).length}</div>
       </div>
       <div class="issue-list">
-        ${rows || '<div class="no-issues">None found</div>'}
+        ${rows || `<div class="no-issues">${escapeHtml(t('review.noneFound'))}</div>`}
       </div>
     </div>`;
 }
@@ -1519,7 +1837,7 @@ function positivesSection(items) {
   return `
     <div class="issue-section issue-section-full">
       <div class="issue-section-header">
-        <div class="icon-label"><span style="color:var(--green);font-weight:700;">Praise</span><span>Positives</span></div>
+        <div class="icon-label"><span style="color:var(--green);font-weight:700;">${escapeHtml(t('review.section.Praise'))}</span><span>${escapeHtml(t('review.positives'))}</span></div>
         <div class="issue-count">${items.length}</div>
       </div>
       <div class="issue-list">${rows}</div>
@@ -1620,7 +1938,7 @@ async function refreshProviderStatus() {
     renderProviderStatus(config);
   } catch (e) {
     const el = document.getElementById('agent-status');
-    if (el) el.textContent = 'Backend unreachable';
+    if (el) el.textContent = t('status.unreachable');
   }
 }
 
@@ -1628,9 +1946,13 @@ function renderProviderStatus(config) {
   const el = document.getElementById('agent-status');
   const dot = document.getElementById('provider-dot');
   if (!el || !config) return;
+  window.__lastProviderConfig = config;
   const presetKey = detectPreset(config);
   const preset = PROVIDER_PRESETS[presetKey];
-  el.textContent = `${preset.label} · ${config.api_key_set ? 'Connected' : 'No API key'}`;
+  el.textContent = t('status.template', {
+    provider: preset.label,
+    state: config.api_key_set ? t('status.connected') : t('status.noApiKey'),
+  });
   if (dot) {
     dot.classList.toggle('disconnected', !config.api_key_set);
   }
@@ -1642,7 +1964,7 @@ async function openSettings() {
     populateSettingsForm(config);
     document.getElementById('settings-modal').hidden = false;
   } catch (e) {
-    alert('Failed to load config: ' + e.message);
+    alert(t('error.loadConfig', { msg: e.message }));
   }
 }
 
@@ -1652,7 +1974,9 @@ function populateSettingsForm(config) {
   document.getElementById('cfg-model').value = config.model || '';
   document.getElementById('cfg-base-url').value = config.base_url || '';
   document.getElementById('cfg-api-key').value = '';
-  document.getElementById('cfg-api-key').placeholder = config.api_key_set ? '••••••••  (leave blank to keep)' : 'Paste your API key';
+  document.getElementById('cfg-api-key').placeholder = config.api_key_set
+    ? t('settings.apiKeyPlaceholderSet')
+    : t('settings.apiKeyPlaceholderNew');
   document.getElementById('cfg-temperature').value = config.temperature ?? 0.2;
   syncPresetUI();
 }
@@ -1675,8 +1999,8 @@ function syncPresetUI() {
   const baseUrlHint = document.getElementById('cfg-base-url-hint');
   if (baseUrlHint) {
     baseUrlHint.textContent = preset.provider === 'anthropic'
-      ? 'Optional. Leave blank for the official Anthropic endpoint. Set this when using an Anthropic-protocol proxy (LiteLLM, AWS Bedrock adapter, gateway, …).'
-      : 'Required. Endpoint that speaks the OpenAI Chat Completions protocol.';
+      ? t('settings.baseUrlHintAnthropic')
+      : t('settings.baseUrlHintOpenai');
   }
 
   if (!baseUrlInput.value && preset.base_url) {
@@ -1709,11 +2033,11 @@ async function saveSettings() {
   const temperatureRaw = parseFloat(document.getElementById('cfg-temperature').value);
 
   if (preset.provider === 'openai-compatible' && !baseUrl) {
-    alert('Base URL is required for OpenAI-compatible providers.');
+    alert(t('error.baseUrlRequired'));
     return;
   }
   if (!model) {
-    alert('Model is required.');
+    alert(t('error.modelRequired'));
     return;
   }
 
@@ -1731,7 +2055,7 @@ async function saveSettings() {
 
   const saveBtn = document.getElementById('cfg-save-btn');
   saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
+  saveBtn.textContent = t('settings.saving');
   try {
     const updated = await api('/api/config/llm', {
       method: 'POST',
@@ -1740,10 +2064,10 @@ async function saveSettings() {
     renderProviderStatus(updated);
     closeSettings();
   } catch (e) {
-    alert('Failed to save: ' + e.message);
+    alert(t('error.saveConfig', { msg: e.message }));
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Save';
+    saveBtn.textContent = t('settings.save');
   }
 }
 
@@ -1754,6 +2078,7 @@ document.addEventListener('keydown', e => {
 });
 
 (async function init() {
+  applyI18n();
   await refreshJobs();
   await refreshStats();
   await refreshProviderStatus();
@@ -1765,51 +2090,51 @@ document.addEventListener('keydown', e => {
   <div class="settings-overlay" onclick="closeSettings()"></div>
   <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="settings-header">
-      <h2 id="settings-title">LLM Configuration</h2>
-      <button class="settings-close" onclick="closeSettings()" aria-label="Close">×</button>
+      <h2 id="settings-title" data-i18n="settings.title">LLM Configuration</h2>
+      <button class="settings-close" onclick="closeSettings()" data-i18n-title="settings.close" aria-label="Close">×</button>
     </div>
     <div class="settings-body">
       <div class="form-group">
-        <label class="form-label" for="cfg-preset">Provider</label>
+        <label class="form-label" for="cfg-preset" data-i18n="settings.provider">Provider</label>
         <select class="form-input" id="cfg-preset" onchange="onPresetChange()">
-          <option value="anthropic">Anthropic (Claude)</option>
-          <option value="anthropic-custom">Custom (Anthropic-compatible)</option>
-          <option value="openai">OpenAI</option>
-          <option value="deepseek">DeepSeek</option>
-          <option value="moonshot">Moonshot (Kimi)</option>
-          <option value="zhipu">智谱 GLM</option>
-          <option value="ollama">Ollama (local)</option>
-          <option value="custom">Custom (OpenAI-compatible)</option>
+          <option value="anthropic" data-i18n="preset.anthropic.label">Anthropic (Claude)</option>
+          <option value="anthropic-custom" data-i18n="preset.anthropic-custom.label">Custom (Anthropic-compatible)</option>
+          <option value="openai" data-i18n="preset.openai.label">OpenAI</option>
+          <option value="deepseek" data-i18n="preset.deepseek.label">DeepSeek</option>
+          <option value="moonshot" data-i18n="preset.moonshot.label">Moonshot (Kimi)</option>
+          <option value="zhipu" data-i18n="preset.zhipu.label">智谱 GLM</option>
+          <option value="ollama" data-i18n="preset.ollama.label">Ollama (local)</option>
+          <option value="custom" data-i18n="preset.custom.label">Custom (OpenAI-compatible)</option>
         </select>
         <div class="preset-note" id="cfg-preset-note"></div>
       </div>
 
       <div class="form-group" id="cfg-base-url-group">
-        <label class="form-label" for="cfg-base-url">Base URL</label>
+        <label class="form-label" for="cfg-base-url" data-i18n="settings.baseUrl">Base URL</label>
         <input class="form-input" id="cfg-base-url" type="text" placeholder="https://api.openai.com/v1" autocomplete="off">
         <div class="form-hint" id="cfg-base-url-hint"></div>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="cfg-model">Model</label>
+        <label class="form-label" for="cfg-model" data-i18n="settings.model">Model</label>
         <input class="form-input" id="cfg-model" type="text" placeholder="gpt-4o-mini" autocomplete="off">
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="cfg-api-key">API Key</label>
-        <input class="form-input" id="cfg-api-key" type="password" placeholder="Paste your API key" autocomplete="off">
-        <div class="form-hint">Leave blank to keep the existing key. The key is stored locally on the server and never sent back to the browser.</div>
+        <label class="form-label" for="cfg-api-key" data-i18n="settings.apiKey">API Key</label>
+        <input class="form-input" id="cfg-api-key" type="password" data-i18n-placeholder="settings.apiKeyPlaceholderNew" placeholder="Paste your API key" autocomplete="off">
+        <div class="form-hint" data-i18n="settings.apiKeyHint">Leave blank to keep the existing key. The key is stored locally on the server and never sent back to the browser.</div>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="cfg-temperature">Temperature</label>
+        <label class="form-label" for="cfg-temperature" data-i18n="settings.temperature">Temperature</label>
         <input class="form-input" id="cfg-temperature" type="number" min="0" max="2" step="0.1" value="0.2">
-        <div class="form-hint">Range 0.0 – 2.0. Lower = more deterministic reviews.</div>
+        <div class="form-hint" data-i18n="settings.temperatureHint">Range 0.0 – 2.0. Lower = more deterministic reviews.</div>
       </div>
 
       <div class="settings-actions">
-        <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
-        <button class="btn-primary" id="cfg-save-btn" onclick="saveSettings()">Save</button>
+        <button class="btn-secondary" onclick="closeSettings()" data-i18n="settings.cancel">Cancel</button>
+        <button class="btn-primary" id="cfg-save-btn" onclick="saveSettings()" data-i18n="settings.save">Save</button>
       </div>
     </div>
   </div>
