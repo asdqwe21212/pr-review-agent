@@ -9,6 +9,11 @@ import logging
 from typing import Optional
 from github import Github, GithubException
 import anthropic as anthropic_module
+import httpx
+try:
+    from llm_config import LLMConfig, get_llm_config_store
+except ImportError:
+    from backend.llm_config import LLMConfig, get_llm_config_store
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -68,17 +73,29 @@ def _should_fetch_full_content(file_info: dict, total_additions: int) -> bool:
 
 
 class PRReviewAgent:
-    def __init__(self, github_token: str, anthropic_api_key: str):
+    def __init__(self, github_token: str, anthropic_api_key: Optional[str] = None, llm_config: Optional[LLMConfig] = None):
         self.gh = Github(github_token)
-        self.client = anthropic_module.Anthropic(api_key=anthropic_api_key, timeout=120)
-        self.model = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+        self.llm_config = (llm_config or get_llm_config_store().load_effective()).normalized()
+        if anthropic_api_key and self.llm_config.provider == "anthropic" and not self.llm_config.api_key:
+            self.llm_config.api_key = anthropic_api_key
+
+        self.model = self.llm_config.model
+        self.client = None
+        if self.llm_config.provider == "anthropic":
+            if not self.llm_config.api_key:
+                raise ValueError("Missing Anthropic API key. Configure it in the dashboard or set ANTHROPIC_API_KEY.")
+            client_kwargs = {"api_key": self.llm_config.api_key, "timeout": 120}
+            if self.llm_config.base_url:
+                client_kwargs["base_url"] = self.llm_config.base_url
+            self.client = anthropic_module.Anthropic(**client_kwargs)
+
         self.conversation_history = []
         self.token_usage = {"input": 0, "output": 0}
-        logger.info(f"PRReviewAgent initialized — model: {self.model}")
+        logger.info(f"PRReviewAgent initialized — provider: {self.llm_config.provider}, model: {self.model}")
 
     def _call_claude(self, messages: list, max_tokens: int = 4096) -> str:
-        """Make a call to Claude API with conversation history and retry logic."""
-        return self._call_claude_inner(messages, max_tokens)
+        """Call the configured LLM provider."""
+        return self._call_llm_inner(messages, max_tokens)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -88,11 +105,18 @@ class PRReviewAgent:
             anthropic_module.APIConnectionError,
             anthropic_module.InternalServerError,
             anthropic_module.APITimeoutError,
+            httpx.TimeoutException,
+            httpx.TransportError,
         )),
         before_sleep=before_sleep_log(logger, logging.WARNING),
         reraise=True,
     )
-    def _call_claude_inner(self, messages: list, max_tokens: int = 4096) -> str:
+    def _call_llm_inner(self, messages: list, max_tokens: int = 4096) -> str:
+        if self.llm_config.provider == "openai-compatible":
+            return self._call_openai_compatible(messages, max_tokens)
+        return self._call_anthropic(messages, max_tokens)
+
+    def _call_anthropic(self, messages: list, max_tokens: int = 4096) -> str:
         response = self.client.messages.create(
             model=self.model,
             max_tokens=max_tokens,
@@ -103,6 +127,31 @@ class PRReviewAgent:
         self.token_usage["input"] += usage.input_tokens
         self.token_usage["output"] += usage.output_tokens
         return response.content[0].text
+
+    def _call_openai_compatible(self, messages: list, max_tokens: int = 4096) -> str:
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *messages],
+            "max_tokens": max_tokens,
+            "temperature": self.llm_config.temperature,
+        }
+        headers = {"Content-Type": "application/json"}
+        if self.llm_config.api_key:
+            headers["Authorization"] = f"Bearer {self.llm_config.api_key}"
+
+        with httpx.Client(timeout=120) as client:
+            response = client.post(
+                f"{self.llm_config.base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        usage = data.get("usage") or {}
+        self.token_usage["input"] += usage.get("prompt_tokens", 0)
+        self.token_usage["output"] += usage.get("completion_tokens", 0)
+        return data["choices"][0]["message"]["content"]
 
     def _get_pr_context(self, repo_name: str, pr_number: int) -> dict:
         """Fetch PR metadata, diff, and file contents from GitHub."""

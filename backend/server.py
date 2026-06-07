@@ -26,6 +26,7 @@ from logging_config import configure_logging
 from token_tracker import get_token_tracker
 from metrics import get_review_metrics
 from metrics_middleware import PrometheusMiddleware, get_metrics_response
+from llm_config import LLMConfig, get_llm_config_store
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -98,12 +99,47 @@ class JobStatus(BaseModel):
     error: Optional[str] = None
 
 
+class LLMConfigRequest(BaseModel):
+    provider: str = "anthropic"
+    api_key: str = ""
+    model: str = "claude-sonnet-4-20250514"
+    base_url: str = ""
+    temperature: float = 0.2
+
+
 def get_agent() -> PRReviewAgent:
     github_token = os.getenv("GITHUB_TOKEN")
-    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-    if not github_token or not anthropic_key:
-        raise HTTPException(status_code=500, detail="Missing GITHUB_TOKEN or ANTHROPIC_API_KEY env vars")
-    return PRReviewAgent(github_token, anthropic_key)
+    if not github_token:
+        raise HTTPException(status_code=500, detail="Missing GITHUB_TOKEN env var")
+    return PRReviewAgent(github_token)
+
+
+@app.get("/api/config/llm")
+async def get_llm_config():
+    """Return LLM provider settings without exposing the API key."""
+    return get_llm_config_store().load_public()
+
+
+@app.post("/api/config/llm")
+async def save_llm_config(req: LLMConfigRequest):
+    """Persist LLM provider settings for future review jobs."""
+    store = get_llm_config_store()
+    saved = store.save(
+        LLMConfig(
+            provider=req.provider,
+            api_key=req.api_key,
+            model=req.model,
+            base_url=req.base_url,
+            temperature=req.temperature,
+        ),
+        preserve_existing_secret=True,
+    )
+    data = store.load_public()
+    data["provider"] = saved.provider
+    data["model"] = saved.model
+    data["base_url"] = saved.base_url
+    data["temperature"] = saved.temperature
+    return data
 
 
 async def run_review_job(job_id: str, repo: str, pr_number: int, post_comment: bool):

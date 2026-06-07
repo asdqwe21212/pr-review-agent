@@ -40,7 +40,7 @@ cp config/.env.example config/.env
 ```
 
 Required:
-- `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com)
+- `ANTHROPIC_API_KEY` (or any provider key — see [Multi-Provider LLM Support](#multi-provider-llm-support)) — for Anthropic
 - `GITHUB_TOKEN` — GitHub Personal Access Token with `repo` scope
 
 ### 3a. CLI Usage (Quick)
@@ -90,6 +90,85 @@ Copy `.github/workflows/pr-review.yml` to your repository. Add these secrets:
 
 Every PR open/sync/reopen triggers an automatic review.
 
+## Multi-Provider LLM Support
+
+The agent is not locked to Anthropic — the LLM provider is configurable end-to-end. The backend speaks two wire formats:
+
+| Backend format | Used by |
+|----------------|---------|
+| `anthropic` | Native Anthropic Messages API. The **Base URL** is optional — set it to point at any Anthropic-protocol proxy. The **Model** field accepts any id (e.g. `claude-3-5-sonnet-20241022`, `claude-3-opus-20240229`, `claude-3-haiku-20240307`, or a custom id your proxy exposes). |
+| `openai-compatible` | OpenAI Chat Completions and any drop-in compatible endpoint (OpenAI, DeepSeek, Moonshot, Zhipu GLM, Ollama, vLLM, Together, Groq, OpenRouter, …). The **Model** field accepts any id (e.g. `gpt-4o`, `gpt-4o-mini`, `deepseek-chat`, `llama3.1`, fine-tunes, etc.). |
+
+In short: **both formats support custom model names**, and the Anthropic format additionally supports pointing at a custom endpoint (LiteLLM, AWS Bedrock, gateway, etc.).
+
+### Switching providers from the dashboard
+
+The fastest way is via the web UI. Start the server (`python backend/server.py`) and open `http://localhost:8000`. Click **Settings** in the top-right corner to open the LLM configuration dialog:
+
+- Pick a **Provider** preset:
+  - **Anthropic (Claude)** — official Anthropic endpoint, no base URL needed
+  - **Custom (Anthropic-compatible)** — point at any Anthropic-protocol proxy and supply a model id
+  - **OpenAI / DeepSeek / Moonshot / 智谱 GLM / Ollama / Custom (OpenAI-compatible)** — covers the OpenAI wire format
+- The dialog auto-fills a sensible **Base URL** and **Model** for each preset; you can override either with your own value
+- Paste your **API Key** (stored server-side only; never echoed back to the browser)
+- Adjust **Temperature** if you want
+
+The provider is persisted at `data/llm_config.json` and is hot-reloaded on every review job, so the next PR you submit uses the new provider.
+
+### Switching providers via environment variables
+
+If you'd rather configure at deploy time, the same fields can be set as env vars. The dashboard `data/llm_config.json` (if it exists) takes precedence over the env.
+
+| Env var | Description |
+|---------|-------------|
+| `LLM_PROVIDER` | `anthropic` or `openai-compatible` |
+| `LLM_API_KEY` | Provider API key. `ANTHROPIC_API_KEY` is still respected as a fallback for `anthropic`. |
+| `LLM_MODEL` | Model id — free-form. `claude-sonnet-4-20250514`, `claude-3-opus-20240229`, `gpt-4o-mini`, `deepseek-chat`, `llama3.1`, fine-tunes, custom proxy ids, etc. |
+| `LLM_BASE_URL` | Optional for `anthropic` (omit to use the official endpoint), required for `openai-compatible`. e.g. `https://api.openai.com/v1`, `http://localhost:11434/v1`, `https://your-litellm-proxy.example.com` |
+| `LLM_TEMPERATURE` | `0.0` – `2.0` (default `0.2`) |
+
+### Example: DeepSeek via env
+
+```bash
+export LLM_PROVIDER=openai-compatible
+export LLM_API_KEY=sk-...
+export LLM_BASE_URL=https://api.deepseek.com/v1
+export LLM_MODEL=deepseek-chat
+```
+
+### Example: Local Ollama
+
+```bash
+export LLM_PROVIDER=openai-compatible
+export LLM_BASE_URL=http://localhost:11434/v1
+export LLM_MODEL=llama3.1
+# Ollama ignores the key, but the field must be non-empty to be sent
+export LLM_API_KEY=ollama
+```
+
+### Example: Anthropic-compatible proxy (LiteLLM, gateway, …)
+
+```bash
+export LLM_PROVIDER=anthropic
+export LLM_API_KEY=sk-anything-the-proxy-expects
+export LLM_BASE_URL=https://your-litellm-proxy.example.com
+# Any model id your proxy exposes — LiteLLM accepts Anthropic model names,
+# OpenAI model names, or any custom routing key
+export LLM_MODEL=claude-3-5-sonnet-20241022
+```
+
+The agent will speak the Anthropic Messages protocol but talk to your proxy instead of `api.anthropic.com`. Useful for centralized key management, audit logging, on-prem deployments, or routing through Cloudflare / VPC.
+
+### How requests are dispatched
+
+| Provider type | Endpoint called | Auth header |
+|---------------|-----------------|-------------|
+| `anthropic` (no `base_url`) | Anthropic SDK → `https://api.anthropic.com` | handled by SDK |
+| `anthropic` (with `base_url`) | Anthropic SDK → `{base_url}` | handled by SDK |
+| `openai-compatible` | `POST {base_url}/chat/completions` | `Authorization: Bearer <key>` |
+
+Review output structure is identical across providers — switching providers does not change the GitHub comment format, the score, or the issue categories the agent reports.
+
 ## How Multi-Turn Reasoning Works
 
 The agent uses 3 sequential Claude API calls per review, each building on prior context:
@@ -120,12 +199,17 @@ The agent uses 3 sequential Claude API calls per review, each building on prior 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | (required) | Anthropic API key |
+| `ANTHROPIC_API_KEY` | (required) | Anthropic API key (fallback for `LLM_API_KEY` when provider is `anthropic`) |
+| `LLM_PROVIDER` | `anthropic` | `anthropic` or `openai-compatible` |
+| `LLM_API_KEY` | — | Provider API key. Overrides `ANTHROPIC_API_KEY` when set. |
+| `LLM_MODEL` | `claude-sonnet-4-20250514` | Model id sent to the provider |
+| `LLM_BASE_URL` | — | Required for `openai-compatible` providers |
+| `LLM_TEMPERATURE` | `0.2` | Sampling temperature (0.0 – 2.0) |
 | `GITHUB_TOKEN` | (required) | GitHub PAT with `repo` scope |
 | `GITHUB_WEBHOOK_SECRET` | (required for webhooks) | HMAC-SHA256 webhook verification |
 | `API_KEY` | — | Optional API key for endpoint authentication |
 | `CORS_ORIGINS` | `http://localhost:8000,http://127.0.0.1:8000` | Comma-separated allowed CORS origins |
-| `CLAUDE_MODEL` | `claude-sonnet-4-20250514` | Claude model to use |
+| `CLAUDE_MODEL` | `claude-sonnet-4-20250514` | Legacy alias for `LLM_MODEL` |
 | `PR_REVIEW_MODE` | `full` | `full` / `diff-only` / `auto` |
 | `PR_REVIEW_MAX_FILES` | `20` | Max files to include in context |
 | `PR_REVIEW_MAX_FILE_CHARS` | `5000` | Max chars per file content |
@@ -149,6 +233,8 @@ The agent uses 3 sequential Claude API calls per review, each building on prior 
 | `GET` | `/api/jobs` | List all jobs (filter: `?repo=`, `?days=`) |
 | `GET` | `/api/jobs/{id}` | Get job status & result |
 | `GET` | `/api/stats` | Aggregate statistics (filter: `?days=`) |
+| `GET` | `/api/config/llm` | Read the current LLM provider config (api_key is masked) |
+| `POST` | `/api/config/llm` | Persist the LLM provider config; leave `api_key` blank to keep the existing key |
 | `GET` | `/api/metrics` | Combined quality + throughput + tokens |
 | `GET` | `/api/metrics/tokens` | Weekly budget, daily breakdown, per-review stats |
 | `GET` | `/api/metrics/quality` | Score distribution, severity, approval rate |
@@ -254,6 +340,19 @@ Add `.pr-review-rules.md` to your repository root (or `.github/pr-review-rules.m
 Also supported: `CONTEXT.md` / `.pr-review-context.md` / `CONTRIBUTING.md` for general project context.
 
 ## Changelog
+
+### v1.3.0 - Multi-Provider LLM Support
+
+**New Features:**
+- Dashboard **Settings** dialog to switch LLM provider, model, base URL, API key, and temperature without restarting the server
+- Provider presets: Anthropic, OpenAI, DeepSeek, Moonshot (Kimi), Zhipu GLM, Ollama, Custom OpenAI-compatible, **Custom Anthropic-compatible** (LiteLLM, gateways, etc.)
+- Custom model support: the **Model** field is free-form on both wire formats, so any model id works (claude-3-opus-*, claude-3-haiku-*, gpt-4o-*, deepseek-*, llama*, fine-tunes, proxy routing keys, …)
+- Anthropic provider now accepts an optional **Base URL**, so you can route Anthropic-protocol traffic through a proxy while keeping the same review output
+- Header status indicator reflects the active provider and shows a warning dot when no API key is set
+- Added `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TEMPERATURE` environment variables (dashboard `data/llm_config.json` still wins when present)
+
+**Notes:**
+- No breaking changes. Existing `ANTHROPIC_API_KEY` + `CLAUDE_MODEL` deployments continue to work without any edit.
 
 ### v1.2.0 - Production Readiness
 

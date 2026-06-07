@@ -968,6 +968,166 @@
     .review-title { font-size: 23px; }
     .review-meta-row { gap: 10px; }
   }
+
+  /* Settings button in header */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .settings-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-xs);
+  }
+  .settings-btn:hover {
+    background: var(--surface-strong);
+    color: var(--emerald-800);
+    border-color: var(--border-bright);
+    transform: translateY(-1px);
+  }
+  .settings-btn .icon { font-size: 14px; }
+
+  /* Settings modal */
+  .settings-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.18s ease-out;
+  }
+  .settings-modal[hidden] { display: none; }
+
+  .settings-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.42);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .settings-dialog {
+    position: relative;
+    width: min(520px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 245, 0.78));
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow-lg);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 26px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .settings-header h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.4px;
+  }
+  .settings-close {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.06);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .settings-close:hover { background: rgba(15, 23, 42, 0.12); color: var(--text-primary); }
+
+  .settings-body { padding: 22px 26px 26px; }
+
+  .settings-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 480px) {
+    .settings-row { grid-template-columns: 1fr; }
+  }
+
+  .form-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .form-hint.danger { color: var(--red); }
+
+  .settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .btn-secondary {
+    padding: 11px 20px;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-secondary:hover {
+    background: var(--surface-strong);
+    color: var(--text-primary);
+    border-color: var(--border-bright);
+  }
+
+  .btn-primary { width: auto; margin-top: 0; padding: 11px 22px; }
+
+  .preset-note {
+    margin-top: 10px;
+    padding: 11px 14px;
+    background: var(--accent-bg);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--emerald-800);
+    line-height: 1.55;
+  }
+  .preset-note code {
+    font-family: var(--font-mono);
+    background: rgba(16, 185, 129, 0.14);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 11.5px;
+  }
+
+  .status-dot.disconnected {
+    background: var(--yellow);
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.18);
+  }
 </style>
 </head>
 <body>
@@ -977,9 +1137,14 @@
       <div class="logo-icon">⌘</div>
       <div class="logo-text">PR<span>Review</span></div>
     </div>
-    <div class="header-status">
-      <div class="status-dot"></div>
-      <span id="agent-status">Claude API · Connected</span>
+    <div class="header-actions">
+      <div class="header-status">
+        <div class="status-dot" id="provider-dot"></div>
+        <span id="agent-status">Loading…</span>
+      </div>
+      <button class="settings-btn" onclick="openSettings()" title="Configure LLM">
+        <span class="icon">⚙</span><span>Settings</span>
+      </button>
     </div>
   </header>
 
@@ -1367,11 +1532,287 @@ document.getElementById('input-pr').addEventListener('keydown', e => {
 
 window.addEventListener('beforeunload', stopPolling);
 
+// --- LLM Configuration Modal ---
+
+const PROVIDER_PRESETS = {
+  anthropic: {
+    label: 'Anthropic (Claude)',
+    provider: 'anthropic',
+    base_url: '',
+    model: 'claude-sonnet-4-20250514',
+    note: 'Native Anthropic Messages API. No base URL required. The model name is sent verbatim, so any Anthropic-published model id works (e.g. claude-3-5-sonnet-*, claude-3-opus-*, claude-3-haiku-*).',
+  },
+  'anthropic-custom': {
+    label: 'Custom (Anthropic-compatible)',
+    provider: 'anthropic',
+    base_url: '',
+    model: '',
+    note: 'Point at any Anthropic-protocol endpoint — for example a LiteLLM proxy, AWS Bedrock Anthropic adapter, or self-hosted gateway. The model name is forwarded as-is.',
+  },
+  openai: {
+    label: 'OpenAI',
+    provider: 'openai-compatible',
+    base_url: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+    note: 'Uses OpenAI Chat Completions format. Any model id is accepted (gpt-4o, gpt-4-turbo, fine-tunes, etc.).',
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    provider: 'openai-compatible',
+    base_url: 'https://api.deepseek.com/v1',
+    model: 'deepseek-chat',
+    note: 'DeepSeek uses an OpenAI-compatible endpoint. Try deepseek-chat or deepseek-reasoner.',
+  },
+  moonshot: {
+    label: 'Moonshot (Kimi)',
+    provider: 'openai-compatible',
+    base_url: 'https://api.moonshot.cn/v1',
+    model: 'moonshot-v1-8k',
+    note: 'Moonshot Kimi. OpenAI-compatible API at api.moonshot.cn. Model ids: moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k.',
+  },
+  zhipu: {
+    label: '智谱 GLM',
+    provider: 'openai-compatible',
+    base_url: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4-flash',
+    note: '智谱 GLM series. OpenAI-compatible API at open.bigmodel.cn. Model ids: glm-4-flash, glm-4, glm-4-plus.',
+  },
+  ollama: {
+    label: 'Ollama (local)',
+    provider: 'openai-compatible',
+    base_url: 'http://localhost:11434/v1',
+    model: 'llama3.1',
+    note: 'Local Ollama daemon. Use any model you have pulled (llama3.1, qwen2.5, mistral, …). The default Ollama key is "ollama" — leave API key blank or use any value.',
+  },
+  custom: {
+    label: 'Custom (OpenAI-compatible)',
+    provider: 'openai-compatible',
+    base_url: '',
+    model: '',
+    note: 'Point at any OpenAI Chat-Completions-compatible endpoint (vLLM, TGI, LM Studio, Together, Groq, OpenRouter, …) and supply a model id.',
+  },
+};
+
+const PRESET_ORDER = ['anthropic', 'anthropic-custom', 'openai', 'deepseek', 'moonshot', 'zhipu', 'ollama', 'custom'];
+
+function normalizeUrl(u) {
+  return (u || '').replace(/\/+$/, '').toLowerCase();
+}
+
+function detectPreset(config) {
+  if (!config) return 'anthropic';
+  if (config.provider === 'anthropic') {
+    // If a base_url is set, treat the user as pointing at an Anthropic-protocol proxy
+    return config.base_url ? 'anthropic-custom' : 'anthropic';
+  }
+  const baseUrl = normalizeUrl(config.base_url);
+  for (const key of PRESET_ORDER) {
+    const preset = PROVIDER_PRESETS[key];
+    if (preset.provider !== 'openai-compatible' || !preset.base_url) continue;
+    if (normalizeUrl(preset.base_url) === baseUrl) return key;
+  }
+  return 'custom';
+}
+
+async function refreshProviderStatus() {
+  try {
+    const config = await api('/api/config/llm');
+    renderProviderStatus(config);
+  } catch (e) {
+    const el = document.getElementById('agent-status');
+    if (el) el.textContent = 'Backend unreachable';
+  }
+}
+
+function renderProviderStatus(config) {
+  const el = document.getElementById('agent-status');
+  const dot = document.getElementById('provider-dot');
+  if (!el || !config) return;
+  const presetKey = detectPreset(config);
+  const preset = PROVIDER_PRESETS[presetKey];
+  el.textContent = `${preset.label} · ${config.api_key_set ? 'Connected' : 'No API key'}`;
+  if (dot) {
+    dot.classList.toggle('disconnected', !config.api_key_set);
+  }
+}
+
+async function openSettings() {
+  try {
+    const config = await api('/api/config/llm');
+    populateSettingsForm(config);
+    document.getElementById('settings-modal').hidden = false;
+  } catch (e) {
+    alert('Failed to load config: ' + e.message);
+  }
+}
+
+function populateSettingsForm(config) {
+  const presetKey = detectPreset(config);
+  document.getElementById('cfg-preset').value = presetKey;
+  document.getElementById('cfg-model').value = config.model || '';
+  document.getElementById('cfg-base-url').value = config.base_url || '';
+  document.getElementById('cfg-api-key').value = '';
+  document.getElementById('cfg-api-key').placeholder = config.api_key_set ? '••••••••  (leave blank to keep)' : 'Paste your API key';
+  document.getElementById('cfg-temperature').value = config.temperature ?? 0.2;
+  syncPresetUI();
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').hidden = true;
+}
+
+function syncPresetUI() {
+  const presetKey = document.getElementById('cfg-preset').value;
+  const preset = PROVIDER_PRESETS[presetKey];
+  const baseGroup = document.getElementById('cfg-base-url-group');
+  const noteEl = document.getElementById('cfg-preset-note');
+  const baseUrlInput = document.getElementById('cfg-base-url');
+
+  // Both Anthropic and OpenAI-compatible formats accept a base URL.
+  // For native Anthropic (preset=anthropic) we still show the field so users
+  // can switch to a proxy without changing the dropdown, but we mark it optional.
+  baseGroup.style.display = '';
+  const baseUrlHint = document.getElementById('cfg-base-url-hint');
+  if (baseUrlHint) {
+    baseUrlHint.textContent = preset.provider === 'anthropic'
+      ? 'Optional. Leave blank for the official Anthropic endpoint. Set this when using an Anthropic-protocol proxy (LiteLLM, AWS Bedrock adapter, gateway, …).'
+      : 'Required. Endpoint that speaks the OpenAI Chat Completions protocol.';
+  }
+
+  if (!baseUrlInput.value && preset.base_url) {
+    baseUrlInput.value = preset.base_url;
+  }
+  if (!document.getElementById('cfg-model').value) {
+    document.getElementById('cfg-model').value = preset.model;
+  }
+
+  noteEl.textContent = preset.note || '';
+  noteEl.style.display = preset.note ? '' : 'none';
+}
+
+function onPresetChange() {
+  const presetKey = document.getElementById('cfg-preset').value;
+  const preset = PROVIDER_PRESETS[presetKey];
+  // When user switches preset, reset the model + base URL to the preset defaults
+  // so they don't see a stale "gpt-4o-mini" while base URL points at DeepSeek.
+  document.getElementById('cfg-base-url').value = preset.base_url || '';
+  document.getElementById('cfg-model').value = preset.model || '';
+  syncPresetUI();
+}
+
+async function saveSettings() {
+  const presetKey = document.getElementById('cfg-preset').value;
+  const preset = PROVIDER_PRESETS[presetKey];
+  const model = document.getElementById('cfg-model').value.trim();
+  const baseUrl = document.getElementById('cfg-base-url').value.trim();
+  const apiKey = document.getElementById('cfg-api-key').value;
+  const temperatureRaw = parseFloat(document.getElementById('cfg-temperature').value);
+
+  if (preset.provider === 'openai-compatible' && !baseUrl) {
+    alert('Base URL is required for OpenAI-compatible providers.');
+    return;
+  }
+  if (!model) {
+    alert('Model is required.');
+    return;
+  }
+
+  // For Anthropic, base_url is optional (empty = official endpoint).
+  // Strip trailing slashes for consistency with the backend normalization.
+  const cleanedBaseUrl = baseUrl.replace(/\/+$/, '');
+
+  const payload = {
+    provider: preset.provider,
+    api_key: apiKey,
+    model,
+    base_url: cleanedBaseUrl,
+    temperature: Number.isFinite(temperatureRaw) ? temperatureRaw : 0.2,
+  };
+
+  const saveBtn = document.getElementById('cfg-save-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  try {
+    const updated = await api('/api/config/llm', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    renderProviderStatus(updated);
+    closeSettings();
+  } catch (e) {
+    alert('Failed to save: ' + e.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('settings-modal').hidden) {
+    closeSettings();
+  }
+});
+
 (async function init() {
   await refreshJobs();
   await refreshStats();
+  await refreshProviderStatus();
   statsInterval = setInterval(refreshStats, 10000);
 })();
 </script>
+
+<div class="settings-modal" id="settings-modal" hidden>
+  <div class="settings-overlay" onclick="closeSettings()"></div>
+  <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-header">
+      <h2 id="settings-title">LLM Configuration</h2>
+      <button class="settings-close" onclick="closeSettings()" aria-label="Close">×</button>
+    </div>
+    <div class="settings-body">
+      <div class="form-group">
+        <label class="form-label" for="cfg-preset">Provider</label>
+        <select class="form-input" id="cfg-preset" onchange="onPresetChange()">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="anthropic-custom">Custom (Anthropic-compatible)</option>
+          <option value="openai">OpenAI</option>
+          <option value="deepseek">DeepSeek</option>
+          <option value="moonshot">Moonshot (Kimi)</option>
+          <option value="zhipu">智谱 GLM</option>
+          <option value="ollama">Ollama (local)</option>
+          <option value="custom">Custom (OpenAI-compatible)</option>
+        </select>
+        <div class="preset-note" id="cfg-preset-note"></div>
+      </div>
+
+      <div class="form-group" id="cfg-base-url-group">
+        <label class="form-label" for="cfg-base-url">Base URL</label>
+        <input class="form-input" id="cfg-base-url" type="text" placeholder="https://api.openai.com/v1" autocomplete="off">
+        <div class="form-hint" id="cfg-base-url-hint"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-model">Model</label>
+        <input class="form-input" id="cfg-model" type="text" placeholder="gpt-4o-mini" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-api-key">API Key</label>
+        <input class="form-input" id="cfg-api-key" type="password" placeholder="Paste your API key" autocomplete="off">
+        <div class="form-hint">Leave blank to keep the existing key. The key is stored locally on the server and never sent back to the browser.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="cfg-temperature">Temperature</label>
+        <input class="form-input" id="cfg-temperature" type="number" min="0" max="2" step="0.1" value="0.2">
+        <div class="form-hint">Range 0.0 – 2.0. Lower = more deterministic reviews.</div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
+        <button class="btn-primary" id="cfg-save-btn" onclick="saveSettings()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

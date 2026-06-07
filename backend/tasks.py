@@ -21,12 +21,11 @@ async def review_task(ctx, job_id: str, repo: str, pr_number: int, post_comment:
     
     try:
         github_token = os.getenv("GITHUB_TOKEN")
-        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
         
-        if not github_token or not anthropic_key:
-            raise ValueError("Missing GITHUB_TOKEN or ANTHROPIC_API_KEY")
+        if not github_token:
+            raise ValueError("Missing GITHUB_TOKEN")
         
-        agent = PRReviewAgent(github_token, anthropic_key)
+        agent = PRReviewAgent(github_token)
         
         result = await asyncio.to_thread(
             agent.review_pr, repo, pr_number, post_comment
